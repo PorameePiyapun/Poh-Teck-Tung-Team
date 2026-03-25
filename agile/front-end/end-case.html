@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>End Case - Poh Teck Tung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="end-case.css">
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card">
+
+    <div class="title">🚑 End Case Report</div>
+
+    <div class="form-group">
+      <label>Case ID</label>
+      <select id="caseId"></select>
+    </div>
+
+    <div class="form-group">
+      <label>Location</label>
+      <input type="text" id="location" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>Officer</label>
+      <input type="text" id="officer" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>Detail</label>
+      <textarea id="detail"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>📷 Incident Photo</label>
+      <div id="incidentPhoto"></div>
+    </div>
+
+    <button type="button" class="btn" onclick="submitCase()">
+      End Case + Generate PDF
+    </button>
+
+  </div>
+</div>
+
+<script>
+
+/* =========================
+   โหลด case ลง dropdown
+========================= */
+async function loadCases() {
+  const res = await fetch("http://localhost:3001/api/cases");
+  const data = await res.json();
+
+  const select = document.getElementById("caseId");
+  select.innerHTML = `<option value="">-- เลือกเคส --</option>`;
+
+  data.data.forEach(c => {
+    if (c.status !== "closed") {
+      select.innerHTML += `<option value="${c.id}">
+        ${c.id} (${c.type})
+      </option>`;
+    }
+  });
+}
+
+/* =========================
+   เลือกเคส → โหลดข้อมูล
+========================= */
+document.getElementById("caseId").addEventListener("change", async function() {
+
+  const caseId = this.value;
+  if (!caseId) return;
+
+  const res = await fetch(`http://localhost:3001/api/cases/${caseId}`);
+  const { data: c } = await res.json();
+
+  document.getElementById("location").value =
+    c.incidentAddress || c.location;
+
+  // officer
+  if (c.assignedOfficer) {
+    const resO = await fetch("http://localhost:3001/api/officers");
+    const oData = await resO.json();
+    const o = oData.data.find(x => x.id === c.assignedOfficer);
+    document.getElementById("officer").value = o?.name || "-";
+  } else {
+    document.getElementById("officer").value = "-";
+  }
+
+  // รูป
+  const photoDiv = document.getElementById("incidentPhoto");
+  photoDiv.innerHTML = c.incidentPhoto
+    ? `<img src="${c.incidentPhoto}" style="width:100px;border-radius:8px;">`
+    : `<span>ไม่มีรูป</span>`;
+});
+
+/* =========================
+   ปิดเคส + โหลด PDF
+========================= */
+async function submitCase() {
+
+  const caseId = document.getElementById("caseId").value;
+  const detail = document.getElementById("detail").value;
+  const officer = document.getElementById("officer").value;
+  const location = document.getElementById("location").value;
+
+  if (!caseId) {
+    alert("กรุณาเลือกเคส");
+    return;
+  }
+
+  try {
+    // 🔹 1. ปิดเคส
+    await fetch(`http://localhost:3001/api/cases/${caseId}/close`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ note: detail })
+    });
+
+    // 🔹 2. โหลด PDF (แก้สำคัญตรงนี้)
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "http://localhost:3001/api/report/pdf";
+    form.target = "_blank"; // 🔥 ตัวนี้แหละที่ทำให้โหลด
+
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "data";
+    input.value = JSON.stringify({
+      caseId,
+      location,
+      officer,
+      detail,
+      images: []
+    });
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+
+    form.submit(); // 👉 ตอนนี้จะโหลด PDF แล้ว
+
+    // 🔹 delay นิดนึงก่อนกลับ
+    setTimeout(() => {
+      window.location.href = "home.html";
+    }, 1500);
+
+  } catch (err) {
+    console.error(err);
+    alert("เกิดข้อผิดพลาด");
+  }
+}
+
+/* =========================
+   โหลดตอนเปิดหน้า
+========================= */
+window.onload = loadCases;
+
+</script>
+
+</body>
+</html>

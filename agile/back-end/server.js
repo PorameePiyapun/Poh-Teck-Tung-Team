@@ -11,8 +11,11 @@ const express = require("express");
 const cors    = require("cors");
 const fs      = require("fs");
 const path    = require("path");
+const puppeteer = require('puppeteer');
 
 const app = express();
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cors());
 app.use(express.json({ limit: "20mb" }));  // รองรับ base64 รูปภาพ
 
@@ -486,4 +489,209 @@ app.listen(PORT, () => {
   console.log("  GET    /api/reports/officer/:id");
   console.log("  GET    /api/reports/gps");
   console.log(`\n📁 Data: ${DATA_DIR}\n`);
+});
+/* ═══════════════════════════════════════
+   US-07: CREATE + DOWNLOAD PDF (Puppeteer)
+═══════════════════════════════════════ */
+app.post("/api/report/pdf", async (req, res) => {
+
+  let browser;
+
+  try {
+    console.log("📥 RAW BODY:", req.body);
+
+    // 🔥 กัน body ว่าง
+    if (!req.body) {
+      throw new Error("Body is empty");
+    }
+
+    // 🔥 parse data
+    let data;
+
+    if (typeof req.body.data === "string") {
+      try {
+        data = JSON.parse(req.body.data);
+      } catch (e) {
+        throw new Error("JSON parse error: " + e.message);
+      }
+    } else {
+      data = req.body;
+    }
+
+    console.log("📦 PARSED DATA:", data);
+
+    // 🔥 กัน caseId ไม่มี
+    const safeCaseId = String(data.caseId || "unknown")
+      .replace(/[^a-zA-Z0-9-_]/g, '');
+
+    console.log("🆔 CASE ID:", safeCaseId);
+
+    // 🔥 launch puppeteer
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+
+          const html = `
+      <html>
+      <head>
+      <meta charset="UTF-8">
+      <style>
+        body {
+          font-family: "TH Sarabun New", Arial, sans-serif;
+          padding: 40px;
+          font-size: 16px;
+        }
+
+        .header {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+
+        .title {
+          font-size: 24px;
+          font-weight: bold;
+        }
+
+        .subtitle {
+          font-size: 18px;
+        }
+
+        .section {
+          margin-top: 20px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 10px;
+        }
+
+        td {
+          border: 1px solid #000;
+          padding: 8px;
+        }
+
+        .label {
+          width: 25%;
+          font-weight: bold;
+          background: #f5f5f5;
+        }
+
+        .signature {
+          margin-top: 60px;
+          text-align: right;
+        }
+
+        .image-box {
+          margin-top: 10px;
+        }
+
+        .image-box img {
+          width: 120px;
+          margin-right: 10px;
+        }
+
+      </style>
+      </head>
+
+      <body>
+
+      <div class="header">
+        <div class="title">มูลนิธิป่อเต็กตึ๊ง</div>
+        <div class="subtitle">รายงานการปฏิบัติงานกู้ภัย</div>
+      </div>
+
+      <div class="section">
+        <table>
+          <tr>
+            <td class="label">เลขที่เคส</td>
+            <td>${data.caseId}</td>
+            <td class="label">วันที่</td>
+            <td>${new Date().toLocaleDateString("th-TH")}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <table>
+          <tr>
+            <td class="label">สถานที่เกิดเหตุ</td>
+            <td colspan="3">${data.location || "-"}</td>
+          </tr>
+          <tr>
+            <td class="label">เจ้าหน้าที่</td>
+            <td>${data.officer || "-"}</td>
+            <td class="label">สถานะ</td>
+            <td>เสร็จสิ้น</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <table>
+          <tr>
+            <td class="label">รายละเอียดเหตุการณ์</td>
+          </tr>
+          <tr>
+            <td style="height:120px;">${data.detail || "-"}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <b>ภาพประกอบ:</b>
+        <div class="image-box">
+          ${
+            data.images && data.images.length > 0
+              ? data.images.map(img => `<img src="${img}">`).join('')
+              : 'ไม่มีรูปภาพ'
+          }
+        </div>
+      </div>
+
+      <div class="signature">
+        ลงชื่อ ___________________________<br/>
+        (${data.officer || "-"})<br/>
+        ผู้รายงาน
+      </div>
+
+      </body>
+      </html>
+      `;
+
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const filePath = path.join(__dirname, `report-${safeCaseId}.pdf`);
+
+    console.log("📁 SAVE PATH:", filePath);
+
+    await page.pdf({
+      path: filePath,
+      format: 'A4',
+      printBackground: true
+    });
+
+    console.log("✅ PDF CREATED SUCCESS");
+
+    await browser.close();
+
+    console.log("📤 SENDING FILE...");
+    res.sendFile(filePath);
+
+  } catch (err) {
+    console.error("❌ PDF ERROR FULL:", err);
+
+    res.status(500).send(`
+      <h2>PDF ERROR</h2>
+      <pre>${err.message}</pre>
+    `);
+
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
 });
