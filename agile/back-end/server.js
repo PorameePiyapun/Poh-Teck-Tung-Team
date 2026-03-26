@@ -15,7 +15,6 @@ const puppeteer = require('puppeteer');
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 app.use(cors());
 app.use(express.json({ limit: "20mb" }));  // รองรับ base64 รูปภาพ
 
@@ -302,6 +301,7 @@ app.post("/api/cases/:caseId/close", (req, res) => {
   c.travelMin  = travelMin;
   c.onSceneMin = onSceneMin;
   c.totalMin   = totalMin;
+  
 
   if (officerId && officers[officerId]) {
     officers[officerId].status = "available";
@@ -327,7 +327,29 @@ app.post("/api/cases/:caseId/close", (req, res) => {
     },
   });
 });
+/* ═══════════════════════════════════════════
+timestamp ลวกๆ
+═══════════════════════════════════════════ */
+app.put("/api/cases/:caseId", (req, res) => {
+  const { caseId } = req.params;
+  const { detail } = req.body;
 
+  if (!cases[caseId]) {
+    return res.status(404).json({ success: false });
+  }
+
+  const c = cases[caseId];
+
+  // 🔥 อัปเดตข้อมูล
+  c.detail = detail || c.detail;
+
+  // 🔥 สำคัญที่สุด
+  c.updatedAt = new Date().toISOString();
+
+  saveJSON(CASES_FILE, cases);
+
+  res.json({ success: true, data: c });
+});
 /* ─────────────────────────────────────────
    POST /api/cases – รับเคสใหม่ (จากหน้าจอ)
    Body: { type, priority, location, reporterName, reporterPhone,
@@ -500,33 +522,28 @@ app.post("/api/report/pdf", async (req, res) => {
   try {
     console.log("📥 RAW BODY:", req.body);
 
-    // 🔥 กัน body ว่าง
     if (!req.body) {
       throw new Error("Body is empty");
     }
 
-    // 🔥 parse data
     let data;
 
     if (typeof req.body.data === "string") {
-      try {
-        data = JSON.parse(req.body.data);
-      } catch (e) {
-        throw new Error("JSON parse error: " + e.message);
-      }
+      data = JSON.parse(req.body.data);
     } else {
       data = req.body;
     }
 
     console.log("📦 PARSED DATA:", data);
 
-    // 🔥 กัน caseId ไม่มี
+    // 🔥 กัน space + ตัวแปลก
     const safeCaseId = String(data.caseId || "unknown")
+      .replace(/\s+/g, '')
       .replace(/[^a-zA-Z0-9-_]/g, '');
 
     console.log("🆔 CASE ID:", safeCaseId);
 
-    // 🔥 launch puppeteer
+    // 🔥 เปิด browser
     browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -534,155 +551,88 @@ app.post("/api/report/pdf", async (req, res) => {
 
     const page = await browser.newPage();
 
-          const html = `
-      <html>
-      <head>
+    // 🔥 HTML
+    const html = `
+    <html>
+    <head>
       <meta charset="UTF-8">
       <style>
-        body {
-          font-family: "TH Sarabun New", Arial, sans-serif;
-          padding: 40px;
-          font-size: 16px;
-        }
-
-        .header {
-          text-align: center;
-          margin-bottom: 20px;
-        }
-
-        .title {
-          font-size: 24px;
-          font-weight: bold;
-        }
-
-        .subtitle {
-          font-size: 18px;
-        }
-
-        .section {
-          margin-top: 20px;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 10px;
-        }
-
-        td {
-          border: 1px solid #000;
-          padding: 8px;
-        }
-
-        .label {
-          width: 25%;
-          font-weight: bold;
-          background: #f5f5f5;
-        }
-
-        .signature {
-          margin-top: 60px;
-          text-align: right;
-        }
-
-        .image-box {
-          margin-top: 10px;
-        }
-
-        .image-box img {
-          width: 120px;
-          margin-right: 10px;
-        }
-
+        body { font-family: "TH Sarabun New", Arial; padding:40px; }
+        .header { text-align:center; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; }
+        td { border:1px solid #000; padding:8px; }
+        .label { background:#eee; font-weight:bold; width:25%; }
       </style>
-      </head>
+    </head>
 
-      <body>
+    <body>
 
       <div class="header">
-        <div class="title">มูลนิธิป่อเต็กตึ๊ง</div>
-        <div class="subtitle">รายงานการปฏิบัติงานกู้ภัย</div>
+        <h2>มูลนิธิป่อเต็กตึ๊ง</h2>
+        <h3>รายงานการปฏิบัติงานกู้ภัย</h3>
       </div>
 
-      <div class="section">
-        <table>
-          <tr>
-            <td class="label">เลขที่เคส</td>
-            <td>${data.caseId}</td>
-            <td class="label">วันที่</td>
-            <td>${new Date().toLocaleDateString("th-TH")}</td>
-          </tr>
-        </table>
-      </div>
+      <table>
+        <tr>
+          <td class="label">เลขที่เคส</td>
+          <td>${data.caseId}</td>
+          <td class="label">วันที่</td>
+          <td>${new Date().toLocaleDateString("th-TH")}</td>
+        </tr>
+      </table>
 
-      <div class="section">
-        <table>
-          <tr>
-            <td class="label">สถานที่เกิดเหตุ</td>
-            <td colspan="3">${data.location || "-"}</td>
-          </tr>
-          <tr>
-            <td class="label">เจ้าหน้าที่</td>
-            <td>${data.officer || "-"}</td>
-            <td class="label">สถานะ</td>
-            <td>เสร็จสิ้น</td>
-          </tr>
-        </table>
-      </div>
+      <table>
+        <tr>
+          <td class="label">สถานที่</td>
+          <td colspan="3">${data.location || "-"}</td>
+        </tr>
+        <tr>
+          <td class="label">เจ้าหน้าที่</td>
+          <td>${data.officer || "-"}</td>
+          <td class="label">สถานะ</td>
+          <td>เสร็จสิ้น</td>
+        </tr>
+      </table>
 
-      <div class="section">
-        <table>
-          <tr>
-            <td class="label">รายละเอียดเหตุการณ์</td>
-          </tr>
-          <tr>
-            <td style="height:120px;">${data.detail || "-"}</td>
-          </tr>
-        </table>
-      </div>
+      <table>
+        <tr>
+          <td class="label">รายละเอียด</td>
+        </tr>
+        <tr>
+          <td style="height:120px;">${data.detail || "-"}</td>
+        </tr>
+      </table>
 
-      <div class="section">
-        <b>ภาพประกอบ:</b>
-        <div class="image-box">
-          ${
-            data.images && data.images.length > 0
-              ? data.images.map(img => `<img src="${img}">`).join('')
-              : 'ไม่มีรูปภาพ'
-          }
-        </div>
-      </div>
+      <br><br>
+      ลงชื่อ ___________________________<br/>
+      (${data.officer || "-"})
 
-      <div class="signature">
-        ลงชื่อ ___________________________<br/>
-        (${data.officer || "-"})<br/>
-        ผู้รายงาน
-      </div>
+    </body>
+    </html>
+    `;
 
-      </body>
-      </html>
-      `;
+    await page.setContent(html, { waitUntil: "networkidle0" });
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const filePath = path.join(__dirname, `report-${safeCaseId}.pdf`);
-
-    console.log("📁 SAVE PATH:", filePath);
-
-    await page.pdf({
-      path: filePath,
-      format: 'A4',
+    // 🔥 สร้าง PDF เป็น buffer (สำคัญมาก)
+    const pdfBuffer = await page.pdf({
+      format: "A4",
       printBackground: true
     });
 
-    console.log("✅ PDF CREATED SUCCESS");
+    console.log("✅ PDF CREATED (BUFFER)");
 
-    await browser.close();
+    // 🔥 header สำหรับ download
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=report-${safeCaseId}.pdf`
+    );
 
-    console.log("📤 SENDING FILE...");
-    res.sendFile(filePath);
+    // 🔥 ส่งไฟล์
+    res.send(pdfBuffer);
 
   } catch (err) {
-    console.error("❌ PDF ERROR FULL:", err);
+    console.error("❌ PDF ERROR:", err);
 
     res.status(500).send(`
       <h2>PDF ERROR</h2>

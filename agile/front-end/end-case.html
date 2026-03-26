@@ -2,8 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>End Case - Poh Teck Tung</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>End Case</title>
   <link rel="stylesheet" href="end-case.css">
 </head>
 
@@ -14,153 +13,104 @@
 
     <div class="title">🚑 End Case Report</div>
 
-    <div class="form-group">
-      <label>Case ID</label>
-      <select id="caseId"></select>
-    </div>
+    <form method="POST" action="http://localhost:3001/api/report/pdf">
 
-    <div class="form-group">
-      <label>Location</label>
-      <input type="text" id="location" readonly>
-    </div>
+      <div class="form-group">
+        <label>Case ID</label>
+        <select name="caseId" id="caseId" required></select>
+      </div>
 
-    <div class="form-group">
-      <label>Officer</label>
-      <input type="text" id="officer" readonly>
-    </div>
+      <div class="form-group">
+        <label>Location</label>
+        <input name="location" id="location" readonly>
+      </div>
 
-    <div class="form-group">
-      <label>Detail</label>
-      <textarea id="detail"></textarea>
-    </div>
+      <div class="form-group">
+        <label>Officer</label>
+        <input name="officer" id="officer" readonly>
+      </div>
 
-    <div class="form-group">
-      <label>📷 Incident Photo</label>
-      <div id="incidentPhoto"></div>
-    </div>
+      <div class="form-group">
+        <label>Detail</label>
+        <textarea name="detail" id="detail"></textarea>
+      </div>
 
-    <button type="button" class="btn" onclick="submitCase()">
-      End Case + Generate PDF
-    </button>
+      <!-- 🔥 ปุ่ม 2 อัน -->
+      <div class="btn-group">
+        <button type="submit" class="btn primary">
+          End Case + Generate PDF
+        </button>
+
+        <button type="button" class="btn secondary" onclick="goHome()">
+          กลับหน้า Home
+        </button>
+      </div>
+
+    </form>
 
   </div>
 </div>
 
 <script>
+// โหลด case
+fetch("http://localhost:3001/api/cases")
+  .then(res => res.json())
+  .then(data => {
+    const select = document.getElementById("caseId");
+    select.innerHTML = `<option value="">-- เลือกเคส --</option>`;
 
-/* =========================
-   โหลด case ลง dropdown
-========================= */
-async function loadCases() {
-  const res = await fetch("http://localhost:3001/api/cases");
-  const data = await res.json();
-
-  const select = document.getElementById("caseId");
-  select.innerHTML = `<option value="">-- เลือกเคส --</option>`;
-
-  data.data.forEach(c => {
-    if (c.status !== "closed") {
-      select.innerHTML += `<option value="${c.id}">
-        ${c.id} (${c.type})
-      </option>`;
-    }
+    data.data.forEach(c => {
+      if (c.status !== "closed") {
+        select.innerHTML += `<option value="${c.id}">${c.id}</option>`;
+      }
+    });
   });
-}
 
-/* =========================
-   เลือกเคส → โหลดข้อมูล
-========================= */
-document.getElementById("caseId").addEventListener("change", async function() {
+// เลือก case → เติมข้อมูล
+document.getElementById("caseId").addEventListener("change", async function () {
+  const id = this.value;
+  if (!id) return;
 
-  const caseId = this.value;
-  if (!caseId) return;
+  const res = await fetch(`http://localhost:3001/api/cases/${id}`);
+  const { data } = await res.json();
 
-  const res = await fetch(`http://localhost:3001/api/cases/${caseId}`);
-  const { data: c } = await res.json();
+  document.getElementById("location").value = data.location || "-";
+  document.getElementById("officer").value = "-";
 
-  document.getElementById("location").value =
-    c.incidentAddress || c.location;
-
-  // officer
-  if (c.assignedOfficer) {
-    const resO = await fetch("http://localhost:3001/api/officers");
-    const oData = await resO.json();
-    const o = oData.data.find(x => x.id === c.assignedOfficer);
-    document.getElementById("officer").value = o?.name || "-";
-  } else {
-    document.getElementById("officer").value = "-";
+  // 🔥 เพิ่มตรงนี้ (timestamp)
+  const ts = document.getElementById("timestamp");
+  if (ts) {
+    ts.value = data.updatedAt
+      ? new Date(data.updatedAt).toLocaleString("th-TH")
+      : "-";
   }
-
-  // รูป
-  const photoDiv = document.getElementById("incidentPhoto");
-  photoDiv.innerHTML = c.incidentPhoto
-    ? `<img src="${c.incidentPhoto}" style="width:100px;border-radius:8px;">`
-    : `<span>ไม่มีรูป</span>`;
 });
 
-/* =========================
-   ปิดเคส + โหลด PDF
-========================= */
-async function submitCase() {
-
-  const caseId = document.getElementById("caseId").value;
-  const detail = document.getElementById("detail").value;
-  const officer = document.getElementById("officer").value;
-  const location = document.getElementById("location").value;
-
-  if (!caseId) {
-    alert("กรุณาเลือกเคส");
-    return;
-  }
-
-  try {
-    // 🔹 1. ปิดเคส
-    await fetch(`http://localhost:3001/api/cases/${caseId}/close`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ note: detail })
-    });
-
-    // 🔹 2. โหลด PDF (แก้สำคัญตรงนี้)
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "http://localhost:3001/api/report/pdf";
-    form.target = "_blank"; // 🔥 ตัวนี้แหละที่ทำให้โหลด
-
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = "data";
-    input.value = JSON.stringify({
-      caseId,
-      location,
-      officer,
-      detail,
-      images: []
-    });
-
-    form.appendChild(input);
-    document.body.appendChild(form);
-
-    form.submit(); // 👉 ตอนนี้จะโหลด PDF แล้ว
-
-    // 🔹 delay นิดนึงก่อนกลับ
-    setTimeout(() => {
-      window.location.href = "home.html";
-    }, 1500);
-
-  } catch (err) {
-    console.error(err);
-    alert("เกิดข้อผิดพลาด");
-  }
+// 🔥 ปุ่มกลับหน้า
+function goHome() {
+  window.location.href = "home.html";
 }
+// 🔥 ดึง caseId จาก URL
+const params = new URLSearchParams(window.location.search);
+const selectedId = params.get("id");
 
-/* =========================
-   โหลดตอนเปิดหน้า
-========================= */
-window.onload = loadCases;
+// 🔥 โหลด case + auto select
+fetch("http://localhost:3001/api/cases")
+  .then(res => res.json())
+  .then(data => {
+    const select = document.getElementById("caseId");
+    select.innerHTML = `<option value="">-- เลือกเคส --</option>`;
 
+    data.data.forEach(c => {
+      select.innerHTML += `<option value="${c.id}">${c.id}</option>`;
+    });
+
+    // 🔥 ถ้ามี id ส่งมา → เลือกอัตโนมัติ
+    if (selectedId) {
+      select.value = selectedId;
+      select.dispatchEvent(new Event("change")); // trigger โหลดข้อมูล
+    }
+  });
 </script>
 
 </body>

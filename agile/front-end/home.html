@@ -691,7 +691,28 @@
             <td><span class="priority-badge p-normal">ปกติ</span></td>
             <td><span class="status-badge s-complete">✅ เสร็จสิ้น</span></td>
             <td><div class="officer-pill"><div class="officer-avatar">ธน</div>ธนา ป.</div></td>
-            <td><button class="btn-action outline" onclick="openCaseDetail('PTT-24006')">🔍 รายละเอียด</button></td>
+
+            <!-- แก้ไขข้อมูล ทำลวกๆ -->
+             
+            <td>
+  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+
+    <!-- 🔥 ปุ่มอยู่บรรทัดเดียว -->
+    <div style="display:flex; gap:6px;">
+      <button class="btn-action outline" onclick="openCaseDetail('PTT-24006')">
+        🔍 รายละเอียด
+      </button>
+
+      <button class="btn-action primary" onclick="editCase('PTT-24006')">
+        ✏️ แก้ไขข้อมูล
+      </button>
+    </div>
+
+    <!-- ✅ timestamp อยู่ล่างปุ่ม -->
+    <small id="timestamp-PTT-24006" style="font-size:11px; color:#888;"></small>
+
+  </div>
+</td>
           </tr>
         </tbody>
       </table>
@@ -2072,6 +2093,60 @@ function showToast(msg, type="") {
   t.classList.add("show");
   _toastTimer = setTimeout(()=>t.classList.remove("show"), 3500);
 }
+/* ═══════════════════════════════════════
+   แก้ไขข้อมูลจบเคส
+═══════════════════════════════════════ */
+function editCase(caseId) {
+  window.location.href = `end-case.html?id=${caseId}`;
+}
+function renderTimestamp(caseData) {
+  const el = document.getElementById(`timestamp-${caseData.id}`);
+  if (!el) return;
+
+  if (caseData.updatedAt) {
+    el.innerText =
+      "แก้ไขล่าสุด " +
+      new Date(caseData.updatedAt).toLocaleString("th-TH");
+  } else {
+    el.innerText = "";
+  }
+}
+function loadTimestamps() {
+  fetch("http://localhost:3001/api/cases")
+    .then(res => res.json())
+    .then(data => {
+      data.data.forEach(c => {
+        const el = document.getElementById(`timestamp-${c.id}`);
+        if (!el) return;
+
+        if (c.updatedAt) {
+          el.innerText =
+            "แก้ไขล่าสุด " +
+            new Date(c.updatedAt).toLocaleString("th-TH");
+        } else {
+          el.innerText = "";
+        }
+      });
+    });
+}
+function loadTimestamps() {
+  fetch("http://localhost:3001/api/cases")
+    .then(res => res.json())
+    .then(data => {
+      data.data.forEach(c => {
+        const el = document.getElementById(`timestamp-${c.id}`);
+        if (!el) return;
+
+        if (c.updatedAt) {
+          el.innerText =
+            "แก้ไขล่าสุด " +
+            new Date(c.updatedAt).toLocaleString("th-TH");
+        }
+      });
+    });
+}
+
+loadTimestamps();
 </script>
 </body>
 </html>
