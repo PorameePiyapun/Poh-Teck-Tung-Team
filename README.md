@@ -1,5 +1,3 @@
-# Run All (commands only)
-
 ## Back-end main server
 
 ```powershell
