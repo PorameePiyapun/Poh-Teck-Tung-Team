@@ -1,0 +1,14 @@
+{
+  "name": "agile-project-merged",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node back-end/server.js & node back-end/case-log-service/service.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "puppeteer": "^24.40.0"
+  }
+}

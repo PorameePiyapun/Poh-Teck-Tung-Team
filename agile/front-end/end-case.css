@@ -1,0 +1,88 @@
+body {
+  margin: 0;
+  font-family: 'Sarabun', sans-serif;
+  background: #FAF7F4;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  border-top: 6px solid #C8161D;
+}
+
+.title {
+  text-align: center;
+  color: #C8161D;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group.full {
+  grid-column: span 2;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+textarea {
+  min-height: 80px;
+}
+
+#incidentPhoto img {
+  width: 120px;
+  border-radius: 8px;
+}
+
+.no-img {
+  color: #999;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn.primary {
+  background: #C8161D;
+  color: white;
+}
+
+.btn.secondary {
+  background: #eee;
+}

@@ -1,0 +1,234 @@
+{
+  "PTT-24001": {
+    "id": "PTT-24001",
+    "type": "อุบัติเหตุ",
+    "location": "ถ.พระราม 2 กม.15",
+    "priority": "critical",
+    "status": "enroute",
+    "assignedOfficer": "officer-001",
+    "reporterName": "ศิริพร ม.",
+    "reporterPhone": "081-234-5678",
+    "createdAt": "2026-03-22T21:11:22.385Z",
+    "incidentGps": {
+      "lat": 13.668,
+      "lng": 100.4722
+    },
+    "incidentAddress": "ถนนพระราม 2 กม.15 บางมด จอมทอง กรุงเทพมหานคร",
+    "incidentPhoto": null,
+    "enrouteAt": "2026-03-26T02:32:34.103Z",
+    "enrouteGps": {
+      "lat": 13.7367,
+      "lng": 100.5232,
+      "accuracy": null
+    },
+    "enrouteAddress": null,
+    "arrivedAt": "2026-03-26T02:32:32.930Z",
+    "arrivedGps": {
+      "lat": 13.7367,
+      "lng": 100.5232,
+      "accuracy": null
+    },
+    "arrivedAddress": null,
+    "closedAt": "2026-03-26T02:32:31.700Z",
+    "travelMin": 65,
+    "totalMin": 65,
+    "note": "Demo close",
+    "onSceneMin": null
+  },
+  "PTT-24004": {
+    "id": "PTT-24004",
+    "type": "ช่วยเหลือทั่วไป",
+    "location": "บ้านพัก ถ.เพชรบุรี",
+    "priority": "normal",
+    "status": "on_scene",
+    "assignedOfficer": "officer-001",
+    "reporterName": "สมศักดิ์ พ.",
+    "reporterPhone": "082-345-6789",
+    "createdAt": "2026-03-22T21:11:22.385Z",
+    "incidentGps": {
+      "lat": 13.7447,
+      "lng": 100.5407
+    },
+    "incidentAddress": "ถนนเพชรบุรี ราชเทวี กรุงเทพมหานคร",
+    "incidentPhoto": null,
+    "enrouteAt": "2026-03-26T02:01:30.943Z",
+    "enrouteGps": {
+      "lat": 13.764953741027991,
+      "lng": 100.50769246161099,
+      "accuracy": null
+    },
+    "enrouteAddress": null,
+    "arrivedAt": "2026-03-26T02:01:33.076Z",
+    "arrivedGps": {
+      "lat": 13.761173476150049,
+      "lng": 100.50972787849007,
+      "accuracy": null
+    },
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": 0,
+    "totalMin": null,
+    "note": ""
+  },
+  "PTT-24005": {
+    "id": "PTT-24005",
+    "type": "อุบัติเหตุ",
+    "location": "แยกลาดกระบัง",
+    "priority": "high",
+    "status": "on_scene",
+    "assignedOfficer": "officer-001",
+    "reporterName": "มูลนิธิรวมใจ",
+    "reporterPhone": "083-456-7890",
+    "createdAt": "2026-03-22T21:11:22.385Z",
+    "incidentGps": {
+      "lat": 13.7261,
+      "lng": 100.7517
+    },
+    "incidentAddress": "แยกลาดกระบัง ลาดกระบัง กรุงเทพมหานคร",
+    "incidentPhoto": null,
+    "enrouteAt": "2026-03-26T02:16:35.641Z",
+    "enrouteGps": {
+      "lat": 13.75720060190253,
+      "lng": 100.48985041637758,
+      "accuracy": null
+    },
+    "enrouteAddress": null,
+    "arrivedAt": "2026-03-26T02:16:41.337Z",
+    "arrivedGps": {
+      "lat": 13.753685135432999,
+      "lng": 100.5110537710674,
+      "accuracy": null
+    },
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": 0,
+    "totalMin": null,
+    "note": ""
+  },
+  "PTT-24006": {
+    "id": "PTT-24006",
+    "type": "ไฟไหม้",
+    "priority": "critical",
+    "location": "ศาลายา",
+    "status": "enroute",
+    "reporterName": "hbli.gbl/",
+    "reporterPhone": "=-09876",
+    "injuredCount": 0,
+    "assignedOfficer": "officer-001",
+    "note": "",
+    "incidentGps": null,
+    "incidentAddress": null,
+    "incidentPhoto": "http://localhost:3001/photos/PTT-24006_incident.jpg",
+    "createdAt": "2026-03-22T21:11:48.310Z",
+    "enrouteAt": "2026-03-26T01:27:14.187Z",
+    "enrouteGps": {
+      "lat": 13.755990695920985,
+      "lng": 100.48515261487846,
+      "accuracy": null
+    },
+    "enrouteAddress": null,
+    "arrivedAt": null,
+    "arrivedGps": null,
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": null,
+    "onSceneMin": null,
+    "totalMin": null
+  },
+  "PTT-24007": {
+    "id": "PTT-24007",
+    "type": "ส่งต่อโรงพยาบาล",
+    "priority": "critical",
+    "location": "ศาลายา จังหวัดนครปฐม",
+    "status": "enroute",
+    "reporterName": "ไดดหำดห",
+    "reporterPhone": "=-09876",
+    "injuredCount": 0,
+    "assignedOfficer": "officer-001",
+    "note": "",
+    "incidentGps": null,
+    "incidentAddress": null,
+    "incidentPhoto": "http://localhost:3001/photos/PTT-24007_incident.jpg",
+    "createdAt": "2026-03-24T10:19:29.383Z",
+    "enrouteAt": "2026-03-24T10:20:14.869Z",
+    "enrouteGps": {
+      "lat": 13.801475226046486,
+      "lng": 100.31008043346105,
+      "accuracy": 120
+    },
+    "enrouteAddress": null,
+    "arrivedAt": "2026-03-24T10:20:06.420Z",
+    "arrivedGps": {
+      "lat": 13.801475226046486,
+      "lng": 100.31008043346105,
+      "accuracy": 120
+    },
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": 0,
+    "onSceneMin": null,
+    "totalMin": null
+  },
+  "PTT-24008": {
+    "id": "PTT-24008",
+    "type": "ส่งต่อโรงพยาบาล",
+    "priority": "high",
+    "location": "ศาลายา",
+    "status": "enroute",
+    "reporterName": "ไดดหำดห",
+    "reporterPhone": "=-09876",
+    "injuredCount": 1,
+    "assignedOfficer": "officer-001",
+    "note": "",
+    "incidentGps": {
+      "lat": 13.8014725,
+      "lng": 100.3242302
+    },
+    "incidentAddress": null,
+    "incidentPhoto": "http://localhost:3001/photos/PTT-24008_incident.jpg",
+    "createdAt": "2026-03-24T10:31:44.472Z",
+    "enrouteAt": "2026-03-26T01:27:34.120Z",
+    "enrouteGps": {
+      "lat": 13.73723584212383,
+      "lng": 100.49286906960674,
+      "accuracy": null
+    },
+    "enrouteAddress": null,
+    "arrivedAt": null,
+    "arrivedGps": null,
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": null,
+    "onSceneMin": null,
+    "totalMin": null
+  },
+  "PTT-24009": {
+    "id": "PTT-24009",
+    "type": "เก็บศพ",
+    "priority": "high",
+    "location": "นครปฐม",
+    "status": "waiting",
+    "reporterName": null,
+    "reporterPhone": "0900000000",
+    "injuredCount": 0,
+    "assignedOfficer": null,
+    "note": "",
+    "incidentGps": {
+      "lat": 13.8190071,
+      "lng": 100.0639917
+    },
+    "incidentAddress": null,
+    "incidentPhoto": null,
+    "createdAt": "2026-03-26T02:17:56.368Z",
+    "enrouteAt": null,
+    "enrouteGps": null,
+    "enrouteAddress": null,
+    "arrivedAt": null,
+    "arrivedGps": null,
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": null,
+    "onSceneMin": null,
+    "totalMin": null
+  }
+}

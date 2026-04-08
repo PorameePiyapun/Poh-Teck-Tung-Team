@@ -1,0 +1,2805 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบรับเคส – มูลนิธิป่อเต็กตึ๊ง</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <style>
+    :root {
+      --red:      #C8161D; --red-dk: #8B0E13; --red-lt: #F5E8E9;
+      --gold:     #D4A017;
+      --ink:      #1A1A1A; --muted: #6B6B6B; --border: #E0D6D0;
+      --bg:       #FAF7F4; --white: #FFFFFF;
+      --green:    #16A34A; --green-lt: #DCFCE7;
+      --orange:   #D4660A; --blue: #1A4A8A;
+      --yellow:   #CA8A04; --yellow-lt: #FEF9C3;
+      --shadow:   0 2px 16px rgba(0,0,0,0.08);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+    .topbar{background:var(--red-dk);color:#fff;font-size:13px;padding:6px 32px;display:flex;justify-content:space-between;align-items:center}
+    .topbar .live-time{font-weight:700;letter-spacing:1px}
+    header{background:var(--red);padding:0 32px;display:flex;align-items:center;gap:20px;height:72px;position:sticky;top:0;z-index:100;box-shadow:0 3px 18px rgba(0,0,0,.25)}
+    .logo-emblem{width:48px;height:48px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:22px;color:var(--red-dk);font-weight:700;flex-shrink:0;box-shadow:0 0 0 3px rgba(255,255,255,.3)}
+    .header-title{flex:1}
+    .header-title h1{font-size:20px;color:#fff;font-weight:700;line-height:1.2}
+    .header-title p{font-size:12px;color:rgba(255,255,255,.7);margin-top:1px}
+    .header-actions{display:flex;gap:10px;align-items:center}
+    .btn-new{background:var(--gold);color:var(--red-dk);border:none;padding:9px 20px;border-radius:6px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s,transform .1s}
+    .btn-new:hover{background:#e8b420;transform:translateY(-1px)}
+    .notif-btn{width:40px;height:40px;background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative}
+    .notif-dot{position:absolute;top:7px;right:7px;width:8px;height:8px;background:var(--gold);border-radius:50%;border:2px solid var(--red)}
+    .user-pill{background:rgba(255,255,255,.15);border-radius:8px;padding:6px 12px;color:#fff;font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer}
+    .user-pill .avatar{width:26px;height:26px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:var(--red-dk)}
+    nav{background:var(--white);border-bottom:2px solid var(--border);padding:0 32px;display:flex;gap:2px}
+    .nav-item{padding:14px 18px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+    .nav-item:hover{color:var(--red)}
+    .nav-item.active{color:var(--red);border-bottom-color:var(--red);font-weight:700}
+    .nav-badge{background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px}
+    main{padding:24px 32px;max-width:1440px;margin:0 auto}
+
+    /* ═══════════════════════════════════════
+       OFFICER ACTION PANEL
+    ═══════════════════════════════════════ */
+    .officer-panel{background:var(--white);border-radius:14px;border:2px solid var(--border);box-shadow:var(--shadow);margin-bottom:24px;overflow:hidden}
+    .officer-panel-head{background:linear-gradient(135deg,#1a1a1a,#2d2d2d);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .officer-ava-lg{width:42px;height:42px;border-radius:50%;background:var(--gold);color:var(--red-dk);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.3)}
+    .opl{display:flex;align-items:center;gap:12px}
+    .oname{color:#fff;font-size:15px;font-weight:700}
+    .orole{color:rgba(255,255,255,.5);font-size:12px;margin-top:1px}
+    /* US-01 toggle */
+    .stw{display:flex;align-items:center;gap:10px}
+    .slabel{color:rgba(255,255,255,.7);font-size:13px;font-weight:500}
+    .toggle-track{width:120px;height:40px;border-radius:20px;background:#333;border:2px solid #444;display:flex;align-items:center;padding:3px;cursor:pointer;position:relative;transition:background .3s,border-color .3s;user-select:none}
+    .toggle-track.available{background:#166534;border-color:#16A34A}
+    .toggle-track.busy{background:#7F1D1D;border-color:#C8161D}
+    .toggle-thumb{width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;transition:transform .3s;box-shadow:0 2px 6px rgba(0,0,0,.3);flex-shrink:0}
+    .toggle-track.available .toggle-thumb{transform:translateX(0)}
+    .toggle-track.busy .toggle-thumb{transform:translateX(76px)}
+    .toggle-text{position:absolute;font-size:11px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.9);right:10px}
+    .toggle-track.available .toggle-text{right:auto;left:42px}
+    .status-ind{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700}
+    .status-ind.available{background:var(--green-lt);color:var(--green)}
+    .status-ind.busy{background:#FEE2E2;color:var(--red)}
+    .sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .status-ind.available .sdot{background:var(--green);animation:pg 1.5s infinite}
+    .status-ind.busy .sdot{background:var(--red)}
+    @keyframes pg{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}50%{box-shadow:0 0 0 7px rgba(22,163,74,0)}}
+
+    .case-sel-bar{padding:12px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+    .case-sel-bar label{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+    .case-sel-bar select{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--ink);background:var(--white);outline:none;min-width:260px;cursor:pointer}
+    .case-sel-bar select:focus{border-color:var(--red)}
+    .cbadge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700}
+    .cbadge.critical{background:#FDE8E8;color:var(--red)}
+    .cbadge.high{background:#FDEBD8;color:var(--orange)}
+    .cbadge.normal{background:#E8EDF8;color:var(--blue)}
+
+    /* 4-card grid */
+    .oab{padding:16px 22px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+    .ac{border-radius:12px;border:2px solid var(--border);padding:18px 14px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;background:var(--white)}
+    .ac:hover:not(.disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+    .ac.disabled{opacity:.38;cursor:not-allowed;pointer-events:none}
+    .ac.available-state{background:linear-gradient(135deg,#DCFCE7,#BBF7D0);border-color:var(--green)}
+    .ac.busy-state{background:linear-gradient(135deg,#FEE2E2,#FECACA);border-color:var(--red)}
+    .ac.enroute-state{background:linear-gradient(135deg,#FEF9C3,#FDE68A);border-color:var(--yellow)}
+    .ac.scene-state{background:linear-gradient(135deg,#FEE2E2,#FECACA);border-color:var(--red)}
+    .ac.done-state{background:linear-gradient(135deg,#DCFCE7,#BBF7D0);border-color:var(--green);cursor:default;pointer-events:none}
+    .ac.closed-state{background:linear-gradient(135deg,#DCFCE7,#6EE7B7);border-color:var(--green);cursor:default;pointer-events:none}
+    .ac-icon{font-size:32px;line-height:1;margin-bottom:10px}
+    .ac-title{font-size:15px;font-weight:800;margin-bottom:4px}
+    .ac-sub{font-size:11.5px;color:var(--muted);line-height:1.6}
+    .ac-sub code{font-size:10px;color:#aaa;display:block;margin-top:4px}
+    .ac-gps{margin-top:10px;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.06);font-size:11px;color:#444;display:none}
+    .ac-gps.show{display:block}
+    .ac-time{margin-top:6px;padding:3px 10px;border-radius:20px;background:rgba(0,0,0,.08);font-size:11px;font-weight:700;display:none}
+    .ac-time.show{display:inline-block}
+    /* US-16 summary box */
+    .summary-box{margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.3);font-size:11px;color:#166534;display:none;text-align:left}
+    .summary-box.show{display:block}
+    .summary-box div{margin-bottom:2px}
+    /* Close modal */
+    .close-modal{background:var(--white);border-radius:16px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:su .25s ease;overflow:hidden}
+    .close-modal-head{padding:18px 22px;background:linear-gradient(135deg,var(--green),#15803D);display:flex;align-items:center;justify-content:space-between}
+    .close-modal-head h3{color:#fff;font-size:16px;font-weight:700}
+    .close-modal-body{padding:20px 22px}
+    .close-modal-body label{font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:6px}
+    .close-modal-body textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;resize:vertical;min-height:90px;outline:none}
+    .close-modal-body textarea:focus{border-color:var(--green)}
+    .summary-preview{margin-top:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px}
+    .summary-preview h4{font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+    .sp-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+    .sp-label{color:var(--muted)}
+    .sp-val{font-weight:700;color:var(--ink)}
+    .close-modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+    .btn-close-case{background:var(--green);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s}
+    .btn-close-case:hover{background:#15803D}
+    /* US-11 scene map panel */
+    .scene-map-panel{background:var(--white);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+    .scene-map-head{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#fff,#fdf9f6)}
+    .scene-map-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+    .scene-map-title svg{width:16px;height:16px;color:var(--red)}
+    #sceneMap{width:100%;height:220px;background:#f0f0f0}
+    .scene-map-info{padding:10px 16px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);background:#fafafa;display:flex;align-items:center;gap:6px}
+    .cache-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700}
+    .cache-badge.hit{background:#DCFCE7;color:var(--green)}
+    .cache-badge.miss{background:#FEF3C7;color:#92400E}
+
+    /* step labels */
+    .step-label{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+    .ac.available-state .step-label,.ac.busy-state .step-label{color:var(--green)}
+    .ac.enroute-state .step-label{color:var(--yellow)}
+    .ac.scene-state .step-label,.ac.done-state .step-label{color:var(--red)}
+
+    /* api strip */
+    .api-strip{padding:10px 22px;border-top:1px solid var(--border);background:#f9fafb;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
+    .apm{padding:2px 7px;border-radius:4px;font-family:monospace;font-size:11px;font-weight:700}
+    .apm.patch{background:#FEF3C7;color:#92400E}
+    .apm.post{background:#DBEAFE;color:#1E40AF}
+    .apath{font-family:monospace;font-size:12px;color:var(--muted)}
+    .apb{margin-left:auto;padding:3px 10px;border-radius:20px;font-weight:700;font-size:11px}
+    .apb.idle{background:#F3F4F6;color:#6B7280}
+    .apb.loading{background:#FEF3C7;color:#92400E}
+    .apb.ok{background:var(--green-lt);color:var(--green)}
+    .apb.err{background:#FEE2E2;color:var(--red)}
+
+    /* ── stats ── */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .stat-card{background:var(--white);border-radius:12px;padding:20px 22px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:16px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s}
+    .stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.12)}
+    .stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:12px 0 0 12px}
+    .stat-card.urgent::before{background:var(--red)}
+    .stat-card.active::before{background:var(--orange)}
+    .stat-card.pending::before{background:var(--blue)}
+    .stat-card.done::before{background:var(--green)}
+    .stat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .stat-card.urgent .stat-icon{background:#FDE8E8}
+    .stat-card.active .stat-icon{background:#FDEBD8}
+    .stat-card.pending .stat-icon{background:#E8EDF8}
+    .stat-card.done .stat-icon{background:#E3F5EC}
+    .stat-icon svg{width:22px;height:22px}
+    .stat-card.urgent .stat-icon svg{color:var(--red)}
+    .stat-card.active .stat-icon svg{color:var(--orange)}
+    .stat-card.pending .stat-icon svg{color:var(--blue)}
+    .stat-card.done .stat-icon svg{color:var(--green)}
+    .stat-info{flex:1}
+    .stat-label{font-size:12px;color:var(--muted);margin-bottom:4px}
+    .stat-number{font-size:30px;font-weight:700;line-height:1}
+    .stat-card.urgent .stat-number{color:var(--red)}
+    .stat-card.active .stat-number{color:var(--orange)}
+    .stat-card.pending .stat-number{color:var(--blue)}
+    .stat-card.done .stat-number{color:var(--green)}
+    .stat-sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .stat-pulse{position:absolute;top:14px;right:14px;width:10px;height:10px;background:var(--red);border-radius:50%;animation:pulse 1.6s ease-in-out infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,22,29,.5)}50%{box-shadow:0 0 0 8px rgba(200,22,29,0)}}
+
+    /* ── layout ── */
+    .content-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+    .panel{background:var(--white);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
+    .panel-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#fff,#fdf9f6)}
+    .panel-title{font-size:15px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+    .panel-title svg{width:18px;height:18px;color:var(--red)}
+    .filters{padding:14px 22px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#fafafa}
+    .search-box{flex:1;min-width:200px;display:flex;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 12px;gap:8px}
+    .search-box svg{width:16px;height:16px;color:var(--muted);flex-shrink:0}
+    .search-box input{border:none;outline:none;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--ink);width:100%;background:transparent}
+    .filter-select{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--ink);background:var(--white);cursor:pointer;outline:none}
+    table{width:100%;border-collapse:collapse}
+    thead tr{background:#f7f2ee}
+    thead th{text-align:left;padding:11px 16px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .15s;cursor:pointer}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:#fdf5f5}
+    tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
+    .case-id{font-weight:700;color:var(--red);font-size:13px}
+    .case-type{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600}
+    .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .priority-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+    .p-critical{background:#FDE8E8;color:var(--red)}
+    .p-high{background:#FDEBD8;color:var(--orange)}
+    .p-normal{background:#E8EDF8;color:var(--blue)}
+    .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600}
+    .s-waiting{background:#FEF3E2;color:#B45309}
+    .s-dispatch{background:#EEF2FF;color:#3730A3}
+    .s-enroute{background:var(--yellow-lt);color:var(--yellow)}
+    .s-onscene{background:#FDE8E8;color:var(--red)}
+    .s-complete{background:#ECFDF5;color:#065F46}
+    .officer-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+    .officer-avatar{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .btn-action{background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 13px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s}
+    .btn-action:hover{background:var(--red-dk)}
+    .btn-action.outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+    .btn-action.outline:hover{background:var(--border);color:var(--ink)}
+    .pagination{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#fafafa}
+    .pagination span{font-size:13px;color:var(--muted)}
+    .page-btns{display:flex;gap:6px}
+    .page-btn{width:32px;height:32px;border:1px solid var(--border);background:var(--white);border-radius:6px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .page-btn.active{background:var(--red);color:#fff;border-color:var(--red);font-weight:700}
+    .page-btn:hover:not(.active){border-color:var(--red);color:var(--red)}
+    .sidebar{display:flex;flex-direction:column;gap:16px}
+    .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 18px}
+    .qa-btn{border:1px solid var(--border);background:var(--white);border-radius:10px;padding:14px 10px;cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px}
+    .qa-btn:hover{border-color:var(--red);background:var(--red-lt)}
+    .qa-btn svg{width:22px;height:22px}
+    .qa-btn span{font-size:12px;font-weight:600;color:var(--ink)}
+    .qa-btn.primary{background:var(--red);border-color:var(--red)}
+    .qa-btn.primary svg,.qa-btn.primary span{color:#fff}
+    .activity-list{padding:6px 0}
+    .activity-item{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+    .activity-item:last-child{border-bottom:none}
+    .act-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px}
+    .act-text{font-size:13px;line-height:1.5}
+    .act-time{font-size:11px;color:var(--muted);margin-top:2px}
+    .team-list{padding:4px 0 6px}
+    .team-item{padding:10px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+    .team-item:last-child{border-bottom:none}
+    .team-avatar{width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .team-info{flex:1}
+    .team-name{font-size:13px;font-weight:600}
+    .team-role{font-size:11px;color:var(--muted)}
+    .tdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .online{background:#22C55E}
+    .busy-dot{background:var(--orange)}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--white);border-radius:16px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:su .25s ease}
+    @keyframes su{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .modal-head{padding:22px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .modal-head h2{font-size:17px;font-weight:700}
+    .modal-close{width:32px;height:32px;border:none;background:var(--border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
+    .modal-body{padding:20px 24px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .form-group{display:flex;flex-direction:column;gap:5px}
+    .form-group.full{grid-column:1/-1}
+    .form-group label{font-size:13px;font-weight:600}
+    .form-group input,.form-group select,.form-group textarea{border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--ink);outline:none;transition:border-color .15s;background:var(--white)}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--red)}
+    .form-group textarea{resize:vertical;min-height:80px}
+    .modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+    .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 20px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;cursor:pointer}
+    .btn-submit{background:var(--red);color:#fff;border:none;padding:9px 24px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+    .toast{position:fixed;bottom:28px;right:28px;background:#1F2937;color:#fff;padding:14px 20px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;display:flex;align-items:center;gap:10px;max-width:380px}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{background:var(--green)}
+    .toast.error{background:var(--red)}
+    .toast.info{background:var(--blue)}
+    .strip{height:3px;background:repeating-linear-gradient(90deg,var(--red) 0%,var(--red) 60%,var(--gold) 60%,var(--gold) 100%);background-size:24px 3px}
+    @media(max-width:1100px){.content-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}.sidebar{display:none}.oab{grid-template-columns:1fr}}
+    @media(max-width:640px){main{padding:12px 16px}header{padding:0 16px}}
+
+    /* ── MAP MODAL ── */
+    .map-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center}
+    .map-overlay.open{display:flex}
+    .map-modal{background:var(--white);border-radius:16px;width:780px;max-width:96vw;max-height:92vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.35);animation:su .25s ease;display:flex;flex-direction:column}
+    .map-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#1a1a1a,#2d2d2d);flex-shrink:0}
+    .map-head h3{color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+    .map-head-info{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+    .map-close{width:32px;height:32px;border:none;background:rgba(255,255,255,.15);border-radius:8px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center}
+    .map-close:hover{background:rgba(255,255,255,.25)}
+    #mapContainer{width:100%;height:440px;flex-shrink:0}
+    .map-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;background:#f9fafb;flex-wrap:wrap}
+    .map-addr{flex:1;font-size:13px;color:var(--ink);font-weight:500;display:flex;align-items:center;gap:6px}
+    .map-coords{font-size:12px;color:var(--muted);font-family:monospace}
+    .btn-map-open{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:8px;transition:background .2s}
+    .btn-map-open:hover{background:#0f3270}
+    .map-pin-pulse{width:16px;height:16px;border-radius:50%;background:var(--red);border:3px solid #fff;box-shadow:0 0 0 3px rgba(200,22,29,.4);animation:pulse 1.5s infinite}
+
+    /* ── US-11 INCIDENT PANEL ── */
+    .incident-panel{
+      border-top:1px solid var(--border);
+      padding:14px 22px;
+      background:linear-gradient(135deg,#fff8f0,#fff);
+      display:none;
+    }
+    .incident-panel.show{display:block}
+    .incident-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+    .incident-title{font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+    .incident-title .badge{background:#FEF3C7;color:#92400E;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
+    .incident-body{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .incident-map-wrap{border-radius:10px;overflow:hidden;height:180px;border:2px solid var(--border);position:relative;background:#e8f4e8}
+    #incidentMapContainer{width:100%;height:100%}
+    .incident-info{display:flex;flex-direction:column;gap:8px;justify-content:center}
+    .iinfo-row{display:flex;align-items:flex-start;gap:8px;font-size:13px}
+    .iinfo-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+    .iinfo-label{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:1px}
+    .iinfo-value{font-weight:600;color:var(--ink);line-height:1.4}
+    .incident-photo{width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none}
+    .incident-photo.show{display:block}
+    .btn-navigate{
+      background:linear-gradient(135deg,#16A34A,#15803D);
+      color:#fff;border:none;border-radius:8px;
+      padding:10px 16px;font-family:'Sarabun',sans-serif;
+      font-size:13px;font-weight:700;cursor:pointer;
+      display:flex;align-items:center;gap:6px;
+      width:100%;justify-content:center;
+      transition:opacity .2s;margin-top:4px;
+    }
+    .btn-navigate:hover{opacity:.9}
+    .btn-navigate svg{width:16px;height:16px}
+    .incident-loading{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+
+    /* ── US-16 CLOSE CASE ── */
+    .ac.close-state{background:linear-gradient(135deg,#DCFCE7,#BBF7D0);border-color:var(--green);cursor:default;pointer-events:none}
+    .summary-box{
+      margin-top:10px;padding:10px 12px;border-radius:10px;
+      background:rgba(0,0,0,.05);text-align:left;display:none;
+    }
+    .summary-box.show{display:block}
+    .sum-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+    .sum-row:last-child{border:none;font-weight:700;font-size:13px}
+    .sum-label{color:#555}
+    .sum-val{font-weight:600;color:var(--ink)}
+
+    /* ── CLOSE CASE MODAL ── */
+    .close-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center}
+    .close-overlay.open{display:flex}
+    .close-modal{background:var(--white);border-radius:16px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:su .25s ease;overflow:hidden}
+    .close-modal-head{background:linear-gradient(135deg,var(--green),#15803D);padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
+    .close-modal-head h3{color:#fff;font-size:16px;font-weight:700}
+    .close-modal-close{width:30px;height:30px;border:none;background:rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .close-modal-body{padding:20px 22px}
+    .time-summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+    .tscard{background:#f8fafb;border:1px solid var(--border);border-radius:10px;padding:12px 10px;text-align:center}
+    .tscard-num{font-size:24px;font-weight:800;color:var(--ink)}
+    .tscard-label{font-size:11px;color:var(--muted);margin-top:2px}
+    .tscard.highlight{background:var(--green-lt);border-color:var(--green)}
+    .tscard.highlight .tscard-num{color:var(--green)}
+    .note-area{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;resize:vertical;min-height:80px;outline:none}
+    .note-area:focus{border-color:var(--green)}
+    .close-modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;background:#f9fafb}
+    .btn-confirm-close{background:var(--green);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s}
+    .btn-confirm-close:hover{background:#15803D}
+
+    /* ── STEP FLOW GUIDE ── */
+    .flow-guide{
+      padding:12px 22px;
+      background:linear-gradient(135deg,#1a1a2e,#16213e);
+      display:none;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+    .flow-guide.show{display:flex}
+    .flow-step{
+      display:flex;align-items:center;gap:6px;
+      padding:6px 12px;border-radius:20px;
+      font-size:12px;font-weight:700;
+      opacity:.4;transition:all .3s;white-space:nowrap;
+    }
+    .flow-step.done{opacity:.7;background:rgba(22,163,74,.2);color:#86efac}
+    .flow-step.active{
+      opacity:1;background:rgba(255,255,255,.12);color:#fff;
+      box-shadow:0 0 0 2px rgba(255,255,255,.3);
+      animation:stepPulse 2s ease-in-out infinite;
+    }
+    .flow-step.pending{opacity:.3;color:rgba(255,255,255,.5)}
+    @keyframes stepPulse{0%,100%{box-shadow:0 0 0 2px rgba(255,255,255,.3)}50%{box-shadow:0 0 0 4px rgba(255,255,255,.1)}}
+    .flow-arrow{color:rgba(255,255,255,.25);font-size:14px}
+    .flow-hint{
+      margin-left:auto;
+      background:rgba(212,160,23,.15);
+      border:1px solid rgba(212,160,23,.3);
+      color:var(--gold);
+      padding:6px 14px;border-radius:20px;
+      font-size:12px;font-weight:700;
+      animation:hint-blink 1.5s ease-in-out infinite;
+    }
+    @keyframes hint-blink{0%,100%{opacity:1}50%{opacity:.6}}
+
+    /* ── PHOTO FULLSCREEN ── */
+    .photo-fs-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:400;align-items:center;justify-content:center}
+    .photo-fs-overlay.open{display:flex}
+    .photo-fs-overlay img{max-width:92vw;max-height:88vh;border-radius:10px;box-shadow:0 0 60px rgba(0,0,0,.5)}
+    .photo-fs-close{position:fixed;top:20px;right:24px;background:rgba(255,255,255,.15);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .photo-fs-close:hover{background:rgba(255,255,255,.3)}
+
+    /* ── EDIT CASE MODAL ── */
+    .edit-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center}
+    .edit-overlay.open{display:flex}
+    .edit-modal{background:var(--white);border-radius:16px;width:580px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);animation:su .25s ease}
+    .edit-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#FFF7ED,#fff)}
+    .edit-head-left{display:flex;align-items:center;gap:10px}
+    .edit-head h2{font-size:16px;font-weight:700;color:var(--ink)}
+    .edit-badge{background:#FEF3C7;color:#92400E;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+    .edit-close{width:32px;height:32px;border:none;background:var(--border);border-radius:8px;cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+    .edit-body{padding:20px 22px}
+    .edit-history{background:#FFF7ED;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px}
+    .edit-history-title{font-weight:700;color:#92400E;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+    .edit-hist-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px dashed #FDE68A}
+    .edit-hist-row:last-child{border:none}
+    .edit-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:#fafafa;border-radius:0 0 16px 16px}
+    .detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center}
+    .detail-overlay.open{display:flex}
+    .detail-modal{background:var(--white);border-radius:16px;width:640px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);animation:su .25s ease}
+    .detail-head{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+    .detail-head-left{display:flex;align-items:center;gap:12px}
+    .detail-case-id{font-size:18px;font-weight:800;color:var(--red)}
+    .detail-close{width:32px;height:32px;border:none;background:var(--border);border-radius:8px;cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+    .detail-section{padding:16px 22px;border-bottom:1px solid var(--border)}
+    .detail-section:last-child{border-bottom:none}
+    .detail-section-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .detail-field{display:flex;flex-direction:column;gap:3px}
+    .detail-field.full{grid-column:1/-1}
+    .detail-label{font-size:11px;color:var(--muted);font-weight:600}
+    .detail-value{font-size:14px;font-weight:600;color:var(--ink)}
+    .detail-photo{width:100%;max-height:200px;object-fit:cover;border-radius:10px;border:1px solid var(--border);cursor:pointer;display:none}
+    .detail-photo.show{display:block}
+    .detail-no-photo{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;color:var(--muted);font-size:13px}
+    .detail-timeline{display:flex;flex-direction:column;gap:0}
+    .tl-item{display:flex;gap:12px;padding:8px 0;align-items:flex-start}
+    .tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px;border:2px solid #fff;box-shadow:0 0 0 2px currentColor}
+    .tl-dot.done{background:var(--green);color:var(--green)}
+    .tl-dot.active{background:var(--red);color:var(--red);animation:pulse 1.5s infinite}
+    .tl-dot.pending{background:#D1D5DB;color:#D1D5DB}
+    .tl-line{width:2px;background:var(--border);margin-left:5px;flex-shrink:0;min-height:16px}
+    .tl-content{flex:1}
+    .tl-label{font-size:13px;font-weight:700}
+    .tl-time{font-size:11px;color:var(--muted);margin-top:1px}
+    .tl-addr{font-size:11px;color:var(--blue);margin-top:2px}
+    .detail-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:#fafafa;border-radius:0 0 16px 16px}
+    .btn-detail-action{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s}
+    .btn-detail-action:hover{background:var(--red-dk)}
+    .btn-detail-action.green{background:var(--green)}
+    .btn-detail-action.green:hover{background:#15803D}
+    .btn-detail-action.outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+    .btn-detail-action.outline:hover{background:var(--border);color:var(--ink)}
+
+    /* ── GEOCODE RESULTS ── */
+    .gc-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;display:flex;gap:10px;align-items:flex-start}
+    .gc-item:last-child{border-bottom:none}
+    .gc-item:hover{background:#f0f4ff}
+    .gc-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+    .gc-main{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4}
+    .gc-sub{font-size:11px;color:var(--muted);margin-top:1px}
+    .gc-coords{font-size:10px;color:#aaa;font-family:monospace;margin-top:2px}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <span>ระบบบริหารเคส มูลนิธิป่อเต็กตึ๊ง · กรุงเทพมหานคร</span>
+  <span class="live-time" id="clock">--:--:--</span>
+</div>
+<div class="strip"></div>
+
+<header>
+  <div class="logo-emblem">義</div>
+  <div class="header-title">
+    <h1>มูลนิธิป่อเต็กตึ๊ง – ระบบรับเคสกู้ภัย</h1>
+    <p>Poh Teck Tung Foundation · Rescue Case Management System</p>
+  </div>
+  <div class="header-actions">
+    <button class="notif-btn"><div class="notif-dot"></div>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+    </button>
+    <div class="user-pill"><div class="avatar">สก</div>สกล รักษ์ชาติ</div>
+    <button class="btn-new" onclick="openModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      รับเคสใหม่
+    </button>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-item active">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>ภาพรวม
+  </div>
+  <div class="nav-item">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V19.5a2.25 2.25 0 002.25 2.25h.75"/></svg>เคสทั้งหมด <span class="nav-badge">42</span>
+  </div>
+  <div class="nav-item">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>แผนที่เคส
+  </div>
+  <div class="nav-item">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>ทีมงาน <span class="nav-badge" style="background:var(--green)">12</span>
+  </div>
+</nav>
+
+<main>
+
+<!-- ═══════════ OFFICER ACTION PANEL ═══════════ -->
+<div class="officer-panel">
+
+  <!-- Head -->
+  <div class="officer-panel-head">
+    <div class="opl">
+      <div class="officer-ava-lg">สก</div>
+      <div>
+        <div class="oname">สกล รักษ์ชาติ &nbsp;·&nbsp; ทีมกู้ภัย A</div>
+        <div class="orole">รหัสพนักงาน: officer-001 &nbsp;·&nbsp; วันนี้รับ 3 เคส</div>
+      </div>
+    </div>
+    <!-- US-01 Toggle -->
+    <div class="stw">
+      <span class="slabel">สถานะ:</span>
+      <div id="toggleTrack" class="toggle-track available" onclick="toggleStatus()">
+        <div id="toggleThumb" class="toggle-thumb">🟢</div>
+        <span id="toggleText" class="toggle-text">พร้อม</span>
+      </div>
+      <div id="statusInd" class="status-ind available">
+        <span class="sdot"></span>
+        <span id="statusTxt">พร้อมปฏิบัติงาน</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case selector -->
+  <div class="case-sel-bar">
+    <label>📋 เคสที่กำลังปฏิบัติ:</label>
+    <select id="caseSelector" onchange="onCaseChange()">
+      <option value="">-- เลือกเคส --</option>
+    </select>
+    <span id="caseBadge" class="cbadge" style="display:none"></span>
+    <button onclick="refreshCaseSelector()" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:4px" title="โหลดเคสใหม่">🔄</button>
+  </div>
+
+  <!-- FLOW GUIDE -->
+  <div class="flow-guide" id="flowGuide">
+    <div class="flow-step done" id="fs-accept">✅ รับเคสแล้ว</div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step" id="fs-review">👁️ ดูข้อมูล / รูป</div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step" id="fs-enroute">🚑 กด "กำลังไป"</div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step" id="fs-arrived">📍 กด "ถึงที่เกิดเหตุ"</div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step" id="fs-close">🏁 กด "จบเคส"</div>
+    <div class="flow-hint" id="flowHint">👇 ดูจุดเกิดเหตุด้านล่าง แล้วกด "กำลังไป"</div>
+  </div>
+
+  <!-- 3 Action Cards -->
+  <div class="oab" style="grid-template-columns:repeat(4,1fr)">
+
+    <!-- US-01 Card -->
+    <div id="card01" class="ac available-state" onclick="toggleStatus()">
+      <div class="step-label">US-01 · สถานะ</div>
+      <div id="c01icon" class="ac-icon">✅</div>
+      <div id="c01title" class="ac-title">พร้อมปฏิบัติงาน</div>
+      <div class="ac-sub">กดเพื่อสลับสถานะ Available / Busy<br>อัปเดตไปศูนย์วิทยุทันที<code>PATCH /api/officers/:id/status</code></div>
+    </div>
+
+    <!-- US-08 Card -->
+    <div id="card08" class="ac" onclick="handleEnroute()">
+      <div class="step-label">US-08 · กำลังไป</div>
+      <div class="ac-icon">🚑</div>
+      <div id="c08title" class="ac-title">กำลังไป</div>
+      <div class="ac-sub">บันทึก GPS ณ เวลากดปุ่ม<br>เปลี่ยนสถานะเป็น 🟡 กำลังไป<code>POST /api/cases/:id/enroute</code></div>
+      <div id="gps08" class="ac-gps"></div>
+      <span id="time08" class="ac-time"></span>
+    </div>
+
+    <!-- US-09 Card -->
+    <div id="card09" class="ac disabled" onclick="handleArrived()">
+      <div class="step-label">US-09 · ถึงที่เกิดเหตุ</div>
+      <div class="ac-icon">📍</div>
+      <div id="c09title" class="ac-title">ถึงที่เกิดเหตุ</div>
+      <div id="c09sub" class="ac-sub">ต้องกด "กำลังไป" ก่อน<br>บันทึกเวลา/GPS เปลี่ยนเป็น 🔴<code>POST /api/cases/:id/arrived</code></div>
+      <div id="gps09" class="ac-gps"></div>
+      <span id="time09" class="ac-time"></span>
+    </div>
+
+    <!-- US-16 Card -->
+    <div id="card16" class="ac disabled" onclick="handleCloseCase()">
+      <div class="step-label">US-16 · จบเคส</div>
+      <div class="ac-icon">🏁</div>
+      <div id="c16title" class="ac-title">จบเคส</div>
+      <div class="ac-sub">สรุปเวลา + บันทึกหมายเหตุ<br>เปลี่ยนสถานะเป็น ✅ เสร็จสิ้น<code>POST /api/cases/:id/close</code></div>
+      <div id="summary16" class="summary-box"></div>
+    </div>
+
+  </div>
+
+  <!-- US-11 INCIDENT LOCATION PANEL -->
+  <div class="incident-panel" id="incidentPanel">
+    <div class="incident-head">
+      <div class="incident-title">
+        🎯 จุดเกิดเหตุ (ปลายทาง)
+        <span class="badge">US-11 · โหลดทันที</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-map-open" onclick="openIncidentFullMap()" style="background:var(--orange)">🗺️ แผนที่เต็มจอ</button>
+        <a id="navLink" href="#" target="_blank" style="text-decoration:none">
+          <button class="btn-navigate" style="width:auto;padding:7px 14px;margin:0">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+            นำทาง Google Maps
+          </button>
+        </a>
+      </div>
+    </div>
+    <div class="incident-body">
+      <!-- แผนที่ซ้าย -->
+      <div class="incident-map-wrap">
+        <div id="incidentMapContainer"></div>
+        <div id="incidentLoading" class="incident-loading">⏳ กำลังโหลดแผนที่...</div>
+      </div>
+      <!-- ข้อมูล + รูปภาพ ขวา -->
+      <div class="incident-info">
+        <div class="iinfo-row">
+          <span class="iinfo-icon">📌</span>
+          <div>
+            <div class="iinfo-label">สถานที่เกิดเหตุ</div>
+            <div class="iinfo-value" id="iLocation">–</div>
+          </div>
+        </div>
+        <div class="iinfo-row">
+          <span class="iinfo-icon">🏠</span>
+          <div>
+            <div class="iinfo-label">ที่อยู่</div>
+            <div class="iinfo-value" id="iAddress">–</div>
+          </div>
+        </div>
+        <div class="iinfo-row">
+          <span class="iinfo-icon">🌐</span>
+          <div>
+            <div class="iinfo-label">พิกัด GPS</div>
+            <div class="iinfo-value" id="iCoords" style="font-family:monospace;font-size:12px">–</div>
+          </div>
+        </div>
+
+        <!-- รูปภาพจุดเกิดเหตุ (ดูอย่างเดียว – ส่งโดยผู้แจ้ง) -->
+        <div id="photoSection">
+          <div id="photoPreviewWrap" style="display:none;position:relative;margin-bottom:6px;cursor:pointer" onclick="openPhotoFullscreen()">
+            <img id="incidentPhoto" style="width:100%;height:130px;object-fit:cover;border-radius:8px;border:2px solid var(--border);display:block;transition:opacity .2s" src="" alt="รูปจุดเกิดเหตุ"/>
+            <div style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">📷 รูปจุดเกิดเหตุ</div>
+            <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 7px;border-radius:6px">🔍 คลิกขยาย</div>
+          </div>
+          <div id="photoEmptyWrap" style="border:2px dashed var(--border);border-radius:8px;padding:14px;text-align:center;color:var(--muted);font-size:12px">
+            📷 ยังไม่มีรูปจุดเกิดเหตุ<br><small>รูปจะแสดงเมื่อผู้แจ้งส่งมา</small>
+          </div>
+        </div>
+
+        <button class="btn-navigate" id="navBtn" onclick="openNavigation()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+          🧭 นำทางไปจุดเกิดเหตุ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API status strip -->
+  <div class="api-strip">
+    <span id="apm" class="apm patch">PATCH</span>
+    <span id="apath" class="apath">/api/officers/officer-001/status</span>
+    <span id="apb" class="apb idle">รอดำเนินการ</span>
+    <span id="amsg" style="font-size:12px;color:var(--muted);margin-left:8px"></span>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stats-row">
+  <div class="stat-card urgent">
+    <div class="stat-pulse"></div>
+    <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></div>
+    <div class="stat-info"><div class="stat-label">เร่งด่วนวิกฤต</div><div class="stat-number">7</div><div class="stat-sub">↑ 2 จากเมื่อกี้</div></div>
+  </div>
+  <div class="stat-card active">
+    <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg></div>
+    <div class="stat-info"><div class="stat-label">หน่วยออกปฏิบัติการ</div><div class="stat-number">14</div><div class="stat-sub">กำลังเดินทาง/ในพื้นที่</div></div>
+  </div>
+  <div class="stat-card pending">
+    <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div class="stat-info"><div class="stat-label">รอดำเนินการ</div><div class="stat-number">21</div><div class="stat-sub">รอจัดทีมกู้ภัย</div></div>
+  </div>
+  <div class="stat-card done">
+    <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div class="stat-info"><div class="stat-label">เสร็จสิ้นวันนี้</div><div class="stat-number">53</div><div class="stat-sub">อัตราสำเร็จ 98.1%</div></div>
+  </div>
+</div>
+
+<div class="content-grid">
+  <!-- TABLE -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+        รายการเคสวันนี้
+      </div>
+      <button class="btn-action" onclick="openModal()">+ รับเคสใหม่</button>
+    </div>
+    <div class="filters">
+      <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
+        <input type="text" placeholder="ค้นหาเลขเคส, ชื่อผู้แจ้ง, สถานที่...">
+      </div>
+      <select class="filter-select"><option>ประเภทเคส</option><option>อุบัติเหตุ</option><option>ช่วยชีวิต</option><option>เก็บศพ</option></select>
+      <select class="filter-select"><option>สถานะ</option><option>รอดำเนินการ</option><option>กำลังไป</option><option>ในพื้นที่</option><option>เสร็จสิ้น</option></select>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>เลขเคส</th><th>ประเภท</th><th>สถานที่</th><th>เวลา</th><th>ความเร่งด่วน</th><th>สถานะ</th><th>เจ้าหน้าที่</th><th></th></tr></thead>
+        <tbody id="caseTable">
+          <tr>
+            <td><span class="case-id">PTT-24001</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span></td>
+            <td>ถ.พระราม 2 กม.15</td><td>08:12</td>
+            <td><span class="priority-badge p-critical">วิกฤต</span></td>
+            <td id="st-PTT-24001"><span class="status-badge s-onscene">🔴 ในพื้นที่</span></td>
+            <td><div class="officer-pill"><div class="officer-avatar">สก</div>สกล ร.</div></td>
+            <td style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn-action outline" onclick="openCaseDetail('PTT-24001')">🔍</button>
+              <button class="btn-action outline" onclick="openEditCase('PTT-24001')" style="border-color:var(--orange);color:var(--orange)">✏️</button>
+              <button class="btn-action" onclick="quickSel('PTT-24001')">เลือก</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="case-id">PTT-24002</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#D4660A"></span>ช่วยชีวิต</span></td>
+            <td>ท่าน้ำนนทบุรี</td><td>08:47</td>
+            <td><span class="priority-badge p-critical">วิกฤต</span></td>
+            <td><span class="status-badge s-dispatch">🔵 จัดทีมแล้ว</span></td>
+            <td><div class="officer-pill"><div class="officer-avatar">วน</div>วนัส ต.</div></td>
+            <td style="display:flex;gap:5px">
+              <button class="btn-action outline" onclick="openCaseDetail('PTT-24002')">🔍</button>
+              <button class="btn-action outline" onclick="openEditCase('PTT-24002')" style="border-color:var(--orange);color:var(--orange)">✏️</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="case-id">PTT-24004</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#1A4A8A"></span>ช่วยเหลือ</span></td>
+            <td>บ้านพัก ถ.เพชรบุรี</td><td>09:32</td>
+            <td><span class="priority-badge p-normal">ปกติ</span></td>
+            <td id="st-PTT-24004"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
+            <td><div class="officer-pill" style="color:var(--muted)">– ยังไม่มี –</div></td>
+            <td style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn-action outline" onclick="openCaseDetail('PTT-24004')">🔍</button>
+              <button class="btn-action outline" onclick="openEditCase('PTT-24004')" style="border-color:var(--orange);color:var(--orange)">✏️</button>
+              <button class="btn-action" onclick="quickSel('PTT-24004')">รับเคส</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="case-id">PTT-24005</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span></td>
+            <td>แยกลาดกระบัง</td><td>09:58</td>
+            <td><span class="priority-badge p-high">สูง</span></td>
+            <td id="st-PTT-24005"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
+            <td><div class="officer-pill" style="color:var(--muted)">– ยังไม่มี –</div></td>
+            <td style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn-action outline" onclick="openCaseDetail('PTT-24005')">🔍</button>
+              <button class="btn-action outline" onclick="openEditCase('PTT-24005')" style="border-color:var(--orange);color:var(--orange)">✏️</button>
+              <button class="btn-action" onclick="quickSel('PTT-24005')">รับเคส</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="case-id">PTT-24006</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#1A7A4A"></span>ส่งต่อ รพ.</span></td>
+            <td>รพ.รามาธิบดี</td><td>10:15</td>
+            <td><span class="priority-badge p-normal">ปกติ</span></td>
+            <td><span class="status-badge s-complete">✅ เสร็จสิ้น</span></td>
+            <td><div class="officer-pill"><div class="officer-avatar">ธน</div>ธนา ป.</div></td>
+            <td style="display:flex;gap:5px">
+              <button class="btn-action outline" onclick="openCaseDetail('PTT-24006')">🔍</button>
+              <button class="btn-action outline" onclick="openEditCase('PTT-24006')" style="border-color:var(--orange);color:var(--orange)">✏️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span>แสดง 5 จาก 42 เคส</span>
+      <div class="page-btns">
+        <button class="page-btn">‹</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- US-11 · แผนที่จุดเกิดเหตุ -->
+    <div class="scene-map-panel">
+      <div class="scene-map-head">
+        <div class="scene-map-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+          US-11 · แผนที่จุดเกิดเหตุ
+        </div>
+        <span id="cacheBadge" class="cache-badge miss">ยังไม่มีข้อมูล</span>
+      </div>
+      <div id="sceneMap"><div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px;flex-direction:column;gap:8px"><span style="font-size:28px">🗺️</span>เลือกเคสและกด "กำลังไป"<br>เพื่อแสดงแผนที่</div></div>
+      <div class="scene-map-info" id="sceneMapInfo">
+        <span>📍</span><span id="sceneMapAddr">รอข้อมูล GPS...</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+          การดำเนินการด่วน
+        </div>
+      </div>
+      <div class="qa-grid">
+        <button class="qa-btn primary" onclick="openModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          <span>รับเคสใหม่</span>
+        </button>
+        <button class="qa-btn" onclick="showToast('📞 เปิดระบบวิทยุ...','info')">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="color:var(--orange)"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+          <span>วิทยุ / โทร</span>
+        </button>
+        <button class="qa-btn" onclick="showToast('🗺️ เปิดแผนที่...','info')">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="color:var(--blue)"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z"/></svg>
+          <span>ดูแผนที่</span>
+        </button>
+        <button class="qa-btn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="color:var(--green)"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z"/></svg><span>พิมพ์รายงาน</span></button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          กิจกรรมล่าสุด
+        </div>
+      </div>
+      <div class="activity-list" id="activityList">
+        <div class="activity-item"><div class="act-dot" style="background:var(--red)"></div><div><div class="act-text"><b>PTT-24001</b> · สกล ถึงพื้นที่แล้ว</div><div class="act-time">เมื่อ 3 นาที</div></div></div>
+        <div class="activity-item"><div class="act-dot" style="background:var(--green)"></div><div><div class="act-text"><b>PTT-24006</b> · ปิดเคส ส่ง รพ.รามา</div><div class="act-time">เมื่อ 15 นาที</div></div></div>
+        <div class="activity-item"><div class="act-dot" style="background:var(--blue)"></div><div><div class="act-text"><b>PTT-24003</b> · มอบหมาย อนุชา</div><div class="act-time">เมื่อ 22 นาที</div></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+          สถานะทีมงาน
+        </div>
+      </div>
+      <div class="team-list">
+        <div class="team-item"><div class="team-avatar" style="background:#8B0E13">สก</div><div class="team-info"><div class="team-name">สกล รักษ์ชาติ</div><div class="team-role" id="tr01">ทีม A · พร้อมปฏิบัติงาน</div></div><div id="td01" class="tdot online"></div></div>
+        <div class="team-item"><div class="team-avatar" style="background:#1A4A8A">วน</div><div class="team-info"><div class="team-name">วนัส ตั้งมั่น</div><div class="team-role">ทีมน้ำ · ท่าน้ำนนท์</div></div><div class="tdot busy-dot"></div></div>
+        <div class="team-item"><div class="team-avatar" style="background:#1A7A4A">ธน</div><div class="team-info"><div class="team-name">ธนา ปราการ</div><div class="team-role">ทีม B · พร้อมรับงาน</div></div><div class="tdot online"></div></div>
+        <div class="team-item"><div class="team-avatar" style="background:#D4660A">คม</div><div class="team-info"><div class="team-name">คมกฤช ล้ำเลิศ</div><div class="team-role">ทีม C · คลองแสนแสบ</div></div><div class="tdot busy-dot"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- CLOSE CASE MODAL (US-16) -->
+<div class="modal-overlay" id="closeModal">
+  <div class="close-modal">
+    <div class="close-modal-head">
+      <h3>✅ จบเคส – สรุปผลการปฏิบัติงาน</h3>
+      <button class="modal-close" onclick="document.getElementById('closeModal').classList.remove('open')" style="background:rgba(255,255,255,.2);color:#fff">✕</button>
+    </div>
+    <div class="close-modal-body">
+      <div class="summary-preview">
+        <h4>📊 สรุปเวลา</h4>
+        <div class="sp-row"><span class="sp-label">เลขเคส</span><span class="sp-val" id="sp-caseId">–</span></div>
+        <div class="sp-row"><span class="sp-label">เวลารับแจ้ง</span><span class="sp-val" id="sp-created">–</span></div>
+        <div class="sp-row"><span class="sp-label">เวลากำลังไป</span><span class="sp-val" id="sp-enroute">–</span></div>
+        <div class="sp-row"><span class="sp-label">เวลาถึงที่เกิดเหตุ</span><span class="sp-val" id="sp-arrived">–</span></div>
+        <div class="sp-row"><span class="sp-label">เวลาเดินทาง</span><span class="sp-val" id="sp-travel">–</span></div>
+        <div class="sp-row"><span class="sp-label">เวลารวมทั้งหมด</span><span class="sp-val" id="sp-total" style="color:var(--green)">–</span></div>
+        <div class="sp-row"><span class="sp-label">สถานที่</span><span class="sp-val" id="sp-location">–</span></div>
+      </div>
+      <div style="margin-top:14px">
+        <label>📝 หมายเหตุ / ผลการปฏิบัติงาน</label>
+        <textarea id="closeNote" placeholder="เช่น ส่งผู้บาดเจ็บถึง รพ.รามาธิบดี แล้ว / ปิดเคสสำเร็จ..."></textarea>
+      </div>
+    </div>
+    <div class="close-modal-foot">
+      <button class="btn-cancel" onclick="document.getElementById('closeModal').classList.remove('open')">ยกเลิก</button>
+      <button class="btn-close-case" onclick="confirmCloseCase()">✅ ยืนยันจบเคส</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLOSE CASE MODAL (US-16) -->
+<div class="close-overlay" id="closeOverlay">
+  <div class="close-modal">
+    <div class="close-modal-head">
+      <h3>🏁 จบเคส – สรุปผลการปฏิบัติงาน</h3>
+      <button class="close-modal-close" onclick="closeCloseModal()">✕</button>
+    </div>
+    <div class="close-modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">เคส <b id="closeModalCaseId"></b> · <span id="closeModalType"></span></p>
+      <div class="time-summary-grid">
+        <div class="tscard">
+          <div class="tscard-num" id="ts-travel">–</div>
+          <div class="tscard-label">🚑 เวลาเดินทาง (นาที)</div>
+        </div>
+        <div class="tscard">
+          <div class="tscard-num" id="ts-scene">–</div>
+          <div class="tscard-label">📍 เวลาในพื้นที่ (นาที)</div>
+        </div>
+        <div class="tscard highlight">
+          <div class="tscard-num" id="ts-total">–</div>
+          <div class="tscard-label">⏱️ เวลารวม (นาที)</div>
+        </div>
+      </div>
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">📝 หมายเหตุ / ผลการปฏิบัติ</label>
+      <textarea class="note-area" id="closeNote" placeholder="เช่น ส่งผู้บาดเจ็บถึง รพ.รามา, ประสานตำรวจ สน.บางนา, ฯลฯ"></textarea>
+    </div>
+    <div class="close-modal-foot">
+      <button class="btn-cancel" onclick="closeCloseModal()">ยกเลิก</button>
+      <button class="btn-confirm-close" onclick="confirmClose()">✅ ยืนยันจบเคส</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAP MODAL -->
+<div class="map-overlay" id="mapOverlay">
+  <div class="map-modal">
+    <div class="map-head">
+      <div>
+        <h3>🗺️ <span id="mapTitle">ตำแหน่ง GPS</span></h3>
+        <div class="map-head-info" id="mapSubtitle">สกล รักษ์ชาติ · ทีม A</div>
+      </div>
+      <button class="map-close" onclick="closeMap()">✕</button>
+    </div>
+    <div id="mapContainer"></div>
+    <div class="map-footer">
+      <div class="map-addr">
+        <span>🏠</span>
+        <span id="mapAddr">กำลังโหลด...</span>
+      </div>
+      <div class="map-coords" id="mapCoords"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL รับเคสใหม่ -->
+<div class="modal-overlay" id="caseModal">
+  <div class="modal" style="width:680px;max-width:98vw">
+    <div class="modal-head">
+      <h2>🚨 รับเคสใหม่</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- แถว 1: ประเภท + ความเร่งด่วน -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>ประเภทเหตุการณ์ *</label>
+          <select id="f-type">
+            <option value="">-- เลือกประเภท --</option>
+            <option value="อุบัติเหตุ">อุบัติเหตุทางถนน</option>
+            <option value="ช่วยชีวิต">ช่วยชีวิต / คนจมน้ำ</option>
+            <option value="เก็บศพ">เก็บศพ</option>
+            <option value="ส่งต่อโรงพยาบาล">ส่งต่อโรงพยาบาล</option>
+            <option value="ไฟไหม้">ไฟไหม้</option>
+            <option value="ช่วยเหลือทั่วไป">ช่วยเหลือทั่วไป</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ความเร่งด่วน *</label>
+          <select id="f-priority">
+            <option value="normal">ปกติ</option>
+            <option value="high">สูง</option>
+            <option value="critical">วิกฤต</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- แถว 2: ชื่อผู้แจ้ง + เบอร์โทร -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>ชื่อผู้แจ้ง</label>
+          <input id="f-reporter" type="text" placeholder="ชื่อ-นามสกุล"/>
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์</label>
+          <input id="f-phone" type="tel" placeholder="08x-xxx-xxxx"/>
+        </div>
+      </div>
+
+      <!-- แถว 3: สถานที่ + ค้นหา GPS อัตโนมัติ -->
+      <div class="form-row">
+        <div class="form-group full">
+          <label>📍 สถานที่เกิดเหตุ * <small style="color:var(--muted);font-weight:400">— พิมพ์ชื่อ อำเภอ จังหวัด แล้วกด 🔍 หรือ Enter</small></label>
+          <div style="display:flex;gap:6px">
+            <input id="f-location" type="text"
+              placeholder="เช่น ลาดกระบัง กรุงเทพ, ศาลายา นครปฐม, เมือง เชียงใหม่"
+              style="flex:1"
+              oninput="onLocationInput()"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();geocodeLocation()}"
+            />
+            <button type="button" onclick="geocodeLocation()" id="geocodeBtn"
+              style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0;transition:background .2s">
+              🔍 ดึง GPS
+            </button>
+          </div>
+
+          <!-- Autocomplete dropdown -->
+          <div id="geocode-results" style="display:none;margin-top:4px;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.1);position:relative;z-index:10;background:var(--white)"></div>
+
+          <!-- GPS ที่เลือกแล้ว -->
+          <div id="geocode-selected" style="display:none;margin-top:6px;background:var(--green-lt);border:1px solid var(--green);border-radius:8px;padding:8px 12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--green)">✅ GPS ที่เลือก</div>
+                <div id="geocode-addr" style="font-size:12px;color:var(--ink);margin-top:2px"></div>
+                <div id="geocode-coords" style="font-size:11px;color:var(--muted);font-family:monospace;margin-top:1px"></div>
+              </div>
+              <button onclick="clearGeocode()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px">✕</button>
+            </div>
+          </div>
+
+          <div id="geocode-status" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- แผนที่ปักหมุด Real-time -->
+      <div class="form-row">
+        <div class="form-group full">
+          <label>🗺️ ปักหมุดบนแผนที่ <small style="color:var(--muted);font-weight:400">— คลิกบนแผนที่เพื่อระบุตำแหน่งที่แน่นอน</small></label>
+          <div style="position:relative;border:2px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s" id="formMapWrap">
+            <div id="formMap" style="width:100%;height:220px"></div>
+            <!-- Crosshair overlay hint -->
+            <div id="formMapHint" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;pointer-events:none;white-space:nowrap">
+              👆 คลิกเพื่อปักหมุด
+            </div>
+          </div>
+          <!-- พิกัดที่เลือกจากแผนที่ -->
+          <div id="map-pin-info" style="display:none;margin-top:6px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;padding:8px 12px;font-size:12px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">📌</span>
+            <div style="flex:1">
+              <div style="font-weight:700;color:#0369A1" id="map-pin-addr">กำลังระบุที่อยู่...</div>
+              <div style="color:var(--muted);font-family:monospace;margin-top:1px" id="map-pin-coords"></div>
+            </div>
+            <button onclick="clearMapPin()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- hidden lat/lng -->
+      <input type="hidden" id="f-lat"/>
+      <input type="hidden" id="f-lng"/>
+
+      <!-- แถว 5: มอบหมาย + จำนวนผู้บาดเจ็บ -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>มอบหมายทีม</label>
+          <select id="f-officer">
+            <option value="">-- ยังไม่มอบหมาย --</option>
+            <option value="officer-001">ทีม A · สกล รักษ์ชาติ</option>
+            <option value="officer-002">ทีม B · วนัส ตั้งมั่น</option>
+            <option value="officer-003">ทีม C · ธนา ปราการ</option>
+            <option value="officer-004">ทีม D · คมกฤช ล้ำเลิศ</option>
+            <option value="officer-005">ทีม E · อนุชา ขวัญใจ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>จำนวนผู้บาดเจ็บ</label>
+          <input id="f-injured" type="number" placeholder="0" min="0" value="0"/>
+        </div>
+      </div>
+
+      <!-- แถว 6: รูปภาพจากผู้แจ้ง -->
+      <div class="form-row">
+        <div class="form-group full">
+          <label>📷 รูปภาพจากผู้แจ้ง (ส่งให้พนักงานดูประเมิน)</label>
+
+          <!-- ปุ่ม 2 ตัว: ถ่ายรูปในแอป + เลือกจากเครื่อง -->
+          <div style="display:flex;gap:8px;margin-bottom:8px" id="photo-btn-group">
+            <button type="button" onclick="openInAppCamera()"
+              style="flex:1;background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .2s"
+              onmouseover="this.style.background='var(--red-dk)'" onmouseout="this.style.background='var(--red)'">
+              📷 ถ่ายรูปในแอป
+            </button>
+            <button type="button" onclick="document.getElementById('f-photo').click()"
+              style="flex:1;border:2px solid var(--border);background:#fafafa;color:var(--ink);border-radius:8px;padding:10px;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s"
+              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink)'">
+              🖼️ เลือกจากเครื่อง
+            </button>
+            <input type="file" id="f-photo" accept="image/*" style="display:none" onchange="onNewCasePhoto(event)"/>
+          </div>
+
+          <!-- In-app camera (video stream) -->
+          <div id="camera-wrap" style="display:none;border-radius:10px;overflow:hidden;border:2px solid var(--red);position:relative;background:#000">
+            <video id="camera-video" autoplay playsinline style="width:100%;max-height:260px;display:block;object-fit:cover"></video>
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:12px;display:flex;justify-content:center;gap:12px">
+              <button type="button" onclick="capturePhoto()"
+                style="background:#fff;border:none;border-radius:50%;width:52px;height:52px;cursor:pointer;font-size:22px;box-shadow:0 2px 12px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center">
+                📸
+              </button>
+              <button type="button" onclick="closeCamera()"
+                style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:44px;height:44px;cursor:pointer;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center">
+                ✕
+              </button>
+            </div>
+            <canvas id="camera-canvas" style="display:none"></canvas>
+          </div>
+
+          <!-- Preview รูปที่ได้ -->
+          <div id="f-photo-preview" style="display:none;position:relative;margin-top:6px">
+            <img id="f-photo-img" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:2px solid var(--green)"/>
+            <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">📷 รูปที่ถ่าย/เลือก</div>
+            <button onclick="removeNewCasePhoto()" style="position:absolute;top:6px;right:6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">✕</button>
+          </div>
+
+          <div id="f-photo-status" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- แถว 7: หมายเหตุ -->
+      <div class="form-row">
+        <div class="form-group full">
+          <label>รายละเอียดเพิ่มเติม</label>
+          <textarea id="f-note" placeholder="อธิบายสถานการณ์, ข้อมูลสำคัญ, สิ่งที่ต้องเตรียม..."></textarea>
+        </div>
+      </div>
+
+      <div id="f-error" style="display:none;background:#FEE2E2;color:var(--red);padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn-submit" id="f-submit-btn" onclick="submitCase()">✓ บันทึกเคส</button>
+    </div>
+  </div>
+</div>
+
+<!-- CASE DETAIL MODAL -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-modal">
+    <div class="detail-head">
+      <div class="detail-head-left">
+        <span class="detail-case-id" id="d-caseId">–</span>
+        <span id="d-typeBadge" class="case-type"><span class="dot" style="background:#C8161D"></span><span id="d-type">–</span></span>
+        <span id="d-priorityBadge" class="priority-badge">–</span>
+      </div>
+      <button class="detail-close" onclick="closeCaseDetail()">✕</button>
+    </div>
+
+    <!-- ข้อมูลพื้นฐาน -->
+    <div class="detail-section">
+      <div class="detail-section-title">📋 ข้อมูลเคส</div>
+      <div class="detail-grid">
+        <div class="detail-field full">
+          <div class="detail-label">สถานที่เกิดเหตุ</div>
+          <div class="detail-value" id="d-location">–</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">ผู้แจ้ง</div>
+          <div class="detail-value" id="d-reporter">–</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">เบอร์โทร</div>
+          <div class="detail-value" id="d-phone">–</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">จำนวนผู้บาดเจ็บ</div>
+          <div class="detail-value" id="d-injured">–</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">เวลารับแจ้ง</div>
+          <div class="detail-value" id="d-createdAt">–</div>
+        </div>
+        <div class="detail-field full">
+          <div class="detail-label">หมายเหตุ</div>
+          <div class="detail-value" id="d-note" style="font-weight:400;color:var(--muted)">–</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- รูปภาพจากผู้แจ้ง -->
+    <div class="detail-section">
+      <div class="detail-section-title">📷 รูปภาพจุดเกิดเหตุ (จากผู้แจ้ง)</div>
+      <img id="d-photo" class="detail-photo" src="" alt="รูปจุดเกิดเหตุ" onclick="openPhotoFullscreen(this.src)"/>
+      <div id="d-no-photo" class="detail-no-photo">📷 ยังไม่มีรูปภาพ</div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="detail-section">
+      <div class="detail-section-title">⏱️ Timeline การปฏิบัติงาน</div>
+      <div class="detail-timeline">
+        <div class="tl-item">
+          <div>
+            <div id="tl-dot-created" class="tl-dot done"></div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-label">📞 รับแจ้งเหตุ</div>
+            <div class="tl-time" id="tl-created">–</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div>
+            <div id="tl-dot-enroute" class="tl-dot pending"></div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-label">🚑 กำลังไป</div>
+            <div class="tl-time" id="tl-enroute">ยังไม่ได้กด</div>
+            <div class="tl-addr" id="tl-enroute-addr"></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div>
+            <div id="tl-dot-arrived" class="tl-dot pending"></div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-label">📍 ถึงที่เกิดเหตุ</div>
+            <div class="tl-time" id="tl-arrived">ยังไม่ถึง</div>
+            <div class="tl-addr" id="tl-arrived-addr"></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div>
+            <div id="tl-dot-closed" class="tl-dot pending"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-label">✅ จบเคส</div>
+            <div class="tl-time" id="tl-closed">ยังไม่จบ</div>
+            <div id="tl-summary" style="font-size:12px;color:var(--green);margin-top:2px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- พิกัด GPS -->
+    <div class="detail-section" id="d-gps-section" style="display:none">
+      <div class="detail-section-title">🌐 พิกัด GPS จุดเกิดเหตุ</div>
+      <div class="detail-grid">
+        <div class="detail-field full">
+          <div class="detail-label">ที่อยู่</div>
+          <div class="detail-value" id="d-inc-addr">–</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">พิกัด</div>
+          <div class="detail-value" id="d-inc-coords" style="font-family:monospace;font-size:12px">–</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-footer">
+      <button class="btn-detail-action outline" onclick="closeCaseDetail()">ปิด</button>
+      <button class="btn-detail-action green" id="d-nav-btn" style="display:none" onclick="openDetailNav()">🧭 นำทาง</button>
+      <button class="btn-detail-action" id="d-select-btn" onclick="selectFromDetail()">✅ เลือกรับเคสนี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CASE MODAL -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-modal">
+    <div class="edit-head">
+      <div class="edit-head-left">
+        <span style="font-size:20px">✏️</span>
+        <h2>แก้ไขเคส <span id="edit-caseId-label" style="color:var(--orange)"></span></h2>
+        <span class="edit-badge">แก้ไขข้อมูล</span>
+      </div>
+      <button class="edit-close" onclick="closeEditCase()">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <!-- ประวัติการแก้ไข -->
+      <div class="edit-history" id="edit-history-box" style="display:none">
+        <div class="edit-history-title">🕐 ประวัติการแก้ไข</div>
+        <div id="edit-history-list"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>ประเภทเหตุการณ์</label>
+          <select id="e-type">
+            <option value="อุบัติเหตุ">อุบัติเหตุทางถนน</option>
+            <option value="ช่วยชีวิต">ช่วยชีวิต / คนจมน้ำ</option>
+            <option value="เก็บศพ">เก็บศพ</option>
+            <option value="ส่งต่อโรงพยาบาล">ส่งต่อโรงพยาบาล</option>
+            <option value="ไฟไหม้">ไฟไหม้</option>
+            <option value="ช่วยเหลือทั่วไป">ช่วยเหลือทั่วไป</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ความเร่งด่วน</label>
+          <select id="e-priority">
+            <option value="normal">ปกติ</option>
+            <option value="high">สูง</option>
+            <option value="critical">วิกฤต</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full">
+          <label>สถานที่เกิดเหตุ</label>
+          <input id="e-location" type="text" placeholder="ระบุที่อยู่หรือจุดสังเกต"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>ชื่อผู้แจ้ง</label>
+          <input id="e-reporter" type="text" placeholder="ชื่อ-นามสกุล"/>
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์</label>
+          <input id="e-phone" type="tel" placeholder="08x-xxx-xxxx"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>จำนวนผู้บาดเจ็บ</label>
+          <input id="e-injured" type="number" min="0" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label>มอบหมายทีม</label>
+          <select id="e-officer">
+            <option value="">– ยังไม่มอบหมาย –</option>
+            <option value="officer-001">ทีม A · สกล รักษ์ชาติ</option>
+            <option value="officer-002">ทีม B · วนัส ตั้งมั่น</option>
+            <option value="officer-003">ทีม C · ธนา ปราการ</option>
+            <option value="officer-004">ทีม D · คมกฤช ล้ำเลิศ</option>
+            <option value="officer-005">ทีม E · อนุชา ขวัญใจ</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full">
+          <label>หมายเหตุ / รายละเอียด</label>
+          <textarea id="e-note" style="min-height:70px" placeholder="อธิบายสถานการณ์เพิ่มเติม..."></textarea>
+        </div>
+      </div>
+
+      <!-- สาเหตุที่แก้ไข (บังคับกรอก) -->
+      <div class="form-row">
+        <div class="form-group full">
+          <label>📝 สาเหตุที่แก้ไข <span style="color:var(--red)">*</span></label>
+          <input id="e-reason" type="text" placeholder="เช่น ข้อมูลผิดพลาด, ผู้แจ้งแจ้งเพิ่มเติม, เจ้าหน้าที่ขอเปลี่ยน..."/>
+        </div>
+      </div>
+
+      <div id="e-error" style="display:none;background:#FEE2E2;color:var(--red);padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600"></div>
+    </div>
+    <div class="edit-footer">
+      <button class="btn-cancel" onclick="closeEditCase()">ยกเลิก</button>
+      <button id="e-submit-btn" onclick="submitEditCase()"
+        style="background:var(--orange);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s"
+        onmouseover="this.style.background='#b45309'" onmouseout="this.style.background='var(--orange)'">
+        💾 บันทึกการแก้ไข
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PHOTO FULLSCREEN -->
+<div class="photo-fs-overlay" id="photoFsOverlay" onclick="closePhotoFs()">
+  <button class="photo-fs-close" onclick="closePhotoFs()">✕</button>
+  <img id="photoFsImg" src="" alt="รูปจุดเกิดเหตุ"/>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script>
+/* ─── CONFIG ─── */
+const API   = "http://localhost:3001";
+const ME    = "officer-001";
+
+/* ─── STATE ─── */
+let myStatus   = "available";
+let selCase    = null;
+let enrouteAt  = null;
+
+/* ─── CLOCK ─── */
+setInterval(() => {
+  document.getElementById("clock").textContent =
+    new Date().toLocaleTimeString("th-TH",{hour12:false});
+}, 1000);
+
+/* ─── NAV ─── */
+document.querySelectorAll(".nav-item").forEach(el =>
+  el.addEventListener("click", () => {
+    document.querySelectorAll(".nav-item").forEach(x => x.classList.remove("active"));
+    el.classList.add("active");
+  })
+);
+
+/* ─── CASE SELECTOR ─── */
+function onCaseChange() {
+  const sel = document.getElementById("caseSelector");
+  selCase = sel.value || null;
+  const b = document.getElementById("caseBadge");
+  if (!selCase) {
+    b.style.display="none";
+    document.getElementById("incidentPanel").classList.remove("show");
+    updateFlowGuide(null);
+    return;
+  }
+  const p = sel.options[sel.selectedIndex].dataset.priority;
+  b.className = "cbadge " + (p==="critical"?"critical":p==="high"?"high":"normal");
+  b.textContent = p==="critical"?"⚠️ วิกฤต":p==="high"?"🔶 สูง":"🔵 ปกติ";
+  b.style.display = "inline-flex";
+  resetCards08_09();
+  loadIncidentData(selCase); // US-11
+  updateFlowGuide("accepted"); // แสดง flow guide
+}
+
+function resetCards08_09() {
+  enrouteAt = null;
+  const c08 = document.getElementById("card08");
+  const c09 = document.getElementById("card09");
+  const c16 = document.getElementById("card16");
+  c08.className = "ac";
+  document.getElementById("c08title").textContent = "กำลังไป";
+  document.getElementById("gps08").classList.remove("show");
+  document.getElementById("time08").classList.remove("show");
+  c09.className = "ac disabled";
+  document.getElementById("c09title").textContent = "ถึงที่เกิดเหตุ";
+  document.getElementById("c09sub").innerHTML = 'ต้องกด "กำลังไป" ก่อน<br>บันทึกเวลา/GPS เปลี่ยนเป็น 🔴<code>POST /api/cases/:id/arrived</code>';
+  document.getElementById("gps09").classList.remove("show");
+  document.getElementById("time09").classList.remove("show");
+  c16.className = "ac disabled";
+  document.getElementById("c16title").textContent = "จบเคส";
+  document.getElementById("summary16").classList.remove("show");
+  if (selCase) updateFlowGuide("accepted"); else updateFlowGuide(null);
+}
+
+function quickSel(id) {
+  document.getElementById("caseSelector").value = id;
+  onCaseChange();
+  window.scrollTo({top:0,behavior:"smooth"});
+  showToast("📋 เลือกเคส "+id+" แล้ว กรุณากดปุ่มดำเนินการ","info");
+}
+
+/* ═══════════════════════════════════════
+   US-11 · โหลดพิกัด/ภาพจุดเกิดเหตุทันที (Cache)
+═══════════════════════════════════════ */
+let incidentLeaflet  = null;
+let incidentCache    = {};  // cache per caseId
+let currentIncident  = null;
+
+async function loadIncidentData(caseId) {
+  const panel = document.getElementById("incidentPanel");
+  panel.classList.add("show");
+  document.getElementById("incidentLoading").style.display = "block";
+  document.getElementById("iLocation").textContent = "⏳ กำลังโหลด...";
+  document.getElementById("iAddress").textContent  = "...";
+  document.getElementById("iCoords").textContent   = "...";
+
+  // ตรวจ cache ก่อน
+  if (incidentCache[caseId]) {
+    renderIncident(incidentCache[caseId]);
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API}/api/cases/${caseId}/incident`);
+    const d = await r.json();
+    if (d.success) {
+      incidentCache[caseId] = d;
+      renderIncident(d);
+    }
+  } catch {
+    // MOCK fallback
+    const mockData = {
+      caseId, location: caseId === "PTT-24001" ? "ถ.พระราม 2 กม.15" : caseId === "PTT-24004" ? "ถ.เพชรบุรี" : "แยกลาดกระบัง",
+      incidentGps: caseId === "PTT-24001" ? {lat:13.668, lng:100.472} : caseId === "PTT-24004" ? {lat:13.744, lng:100.540} : {lat:13.726, lng:100.751},
+      incidentAddress: caseId === "PTT-24001" ? "ถนนพระราม 2 บางมด จอมทอง กรุงเทพฯ" : caseId === "PTT-24004" ? "ถนนเพชรบุรี ราชเทวี กรุงเทพฯ" : "แยกลาดกระบัง กรุงเทพฯ",
+      incidentPhoto: null,
+      navigationUrl: null,
+    };
+    if (mockData.incidentGps)
+      mockData.navigationUrl = `https://www.google.com/maps/dir/?api=1&destination=${mockData.incidentGps.lat},${mockData.incidentGps.lng}&travelmode=driving`;
+    incidentCache[caseId] = mockData;
+    renderIncident(mockData);
+  }
+}
+
+function renderIncident(data) {
+  currentIncident = data;
+  const gps = data.incidentGps;
+  document.getElementById("incidentLoading").style.display = "none";
+  document.getElementById("iLocation").textContent = data.location || "–";
+  document.getElementById("iAddress").textContent  = data.incidentAddress || "ไม่มีข้อมูล";
+  document.getElementById("iCoords").textContent   = gps ? `${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)}` : "–";
+
+  // แสดงรูปภาพ ถ้ามี
+  if (data.incidentPhoto) {
+    document.getElementById("incidentPhoto").src       = data.incidentPhoto;
+    document.getElementById("photoPreviewWrap").style.display = "block";
+    document.getElementById("photoEmptyWrap").style.display   = "none";
+  } else {
+    document.getElementById("photoPreviewWrap").style.display = "none";
+    document.getElementById("photoEmptyWrap").style.display   = "block";
+  }
+
+  // ลิงก์นำทาง
+  if (data.navigationUrl) {
+    document.getElementById("navLink").href = data.navigationUrl;
+  }
+
+  // วาดแผนที่จุดเกิดเหตุ
+  if (gps) {
+    setTimeout(() => {
+      if (!incidentLeaflet) {
+        incidentLeaflet = L.map("incidentMapContainer", { zoomControl:true, attributionControl:false })
+          .setView([gps.lat, gps.lng], 15);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:19 })
+          .addTo(incidentLeaflet);
+      } else {
+        incidentLeaflet.setView([gps.lat, gps.lng], 15);
+        incidentLeaflet.eachLayer(l => { if (l instanceof L.Marker) incidentLeaflet.removeLayer(l); });
+      }
+      const incidentIcon = L.divIcon({
+        html:`<div style="position:relative">
+          <div style="width:22px;height:22px;border-radius:50%;background:#C8161D;border:3px solid #fff;box-shadow:0 0 0 4px rgba(200,22,29,.3);animation:pulse 1.5s infinite"></div>
+          <div style="position:absolute;top:-20px;left:50%;transform:translateX(-50%);background:#C8161D;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap">🎯 จุดเกิดเหตุ</div>
+        </div>`,
+        iconSize:[22,22], iconAnchor:[11,11], className:""
+      });
+      L.marker([gps.lat, gps.lng], { icon: incidentIcon }).addTo(incidentLeaflet)
+        .bindPopup(`<div style="font-family:Sarabun,sans-serif;min-width:160px">
+          <div style="font-weight:700;color:#C8161D;margin-bottom:4px">🎯 จุดเกิดเหตุ</div>
+          <div style="font-size:12px">${data.incidentAddress||data.location}</div>
+          <a href="${data.navigationUrl||"#"}" target="_blank" style="display:block;margin-top:6px;background:#16A34A;color:#fff;text-align:center;padding:4px 8px;border-radius:6px;font-size:11px;text-decoration:none">🧭 นำทาง</a>
+        </div>`).openPopup();
+      incidentLeaflet.invalidateSize();
+    }, 150);
+  }
+}
+
+/* ─── PHOTO FUNCTIONS ─── */
+function showPhoto(src) {
+  const img  = document.getElementById("incidentPhoto");
+  const wrap = document.getElementById("photoPreviewWrap");
+  const upld = document.getElementById("photoUploadWrap");
+  img.src = src;
+  wrap.style.display = "block";
+  upld.style.display = "none";
+  document.getElementById("photoUploadStatus").textContent = "";
+}
+
+function removePhoto() {
+  document.getElementById("incidentPhoto").src         = "";
+  document.getElementById("photoPreviewWrap").style.display = "none";
+  document.getElementById("photoUploadWrap").style.display  = "block";
+  document.getElementById("photoUploadStatus").textContent  = "";
+  if (currentIncident) currentIncident.incidentPhoto = null;
+}
+
+function onPhotoSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // ตรวจขนาด ≤ 10MB
+  if (file.size > 10 * 1024 * 1024) {
+    showToast("⚠️ รูปใหญ่เกิน 10MB","error");
+    return;
+  }
+
+  document.getElementById("photoUploadStatus").textContent = "⏳ กำลังโหลดรูป...";
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result;
+    showPhoto(base64);
+
+    // ส่งไป backend
+    if (selCase) {
+      document.getElementById("photoUploadStatus").textContent = "⏳ กำลังอัปโหลด...";
+      try {
+        const r = await fetch(`${API}/api/cases/${selCase}/incident`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat:          currentIncident?.incidentGps?.lat,
+            lng:          currentIncident?.incidentGps?.lng,
+            address:      currentIncident?.incidentAddress,
+            photoBase64:  base64,
+          }),
+        });
+        const d = await r.json();
+        if (d.success) {
+          document.getElementById("photoUploadStatus").textContent = "✅ อัปโหลดสำเร็จ";
+          if (currentIncident) currentIncident.incidentPhoto = d.incidentPhoto || base64;
+          // อัปเดต cache
+          if (incidentCache[selCase]) incidentCache[selCase].incidentPhoto = d.incidentPhoto || base64;
+          showToast("📷 อัปโหลดรูปสำเร็จ", "success");
+        }
+      } catch {
+        // mock mode – แสดงรูปใน local อย่างเดียว
+        document.getElementById("photoUploadStatus").textContent = "📷 บันทึกรูปในเครื่อง (mock)";
+        if (currentIncident) currentIncident.incidentPhoto = base64;
+      }
+    }
+  };
+  reader.readAsDataURL(file);
+  // reset input
+  event.target.value = "";
+}
+
+function openNavigation() {
+  if (currentIncident?.navigationUrl) {
+    window.open(currentIncident.navigationUrl, "_blank");
+  } else {
+    showToast("⚠️ ไม่มีข้อมูลพิกัดจุดเกิดเหตุ","error");
+  }
+}
+
+function openIncidentFullMap() {
+  if (!currentIncident?.incidentGps) { showToast("⚠️ ไม่มีพิกัดจุดเกิดเหตุ","error"); return; }
+  const g = currentIncident.incidentGps;
+  document.getElementById("mapTitle").textContent   = "🎯 จุดเกิดเหตุ – "+currentIncident.location;
+  document.getElementById("mapSubtitle").textContent = currentIncident.incidentAddress||"";
+  document.getElementById("mapAddr").textContent    = currentIncident.incidentAddress||"–";
+  document.getElementById("mapCoords").textContent  = `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}`;
+  document.getElementById("mapOverlay").classList.add("open");
+  setTimeout(() => {
+    if (!leafletMap) {
+      leafletMap = L.map("mapContainer").setView([g.lat,g.lng],15);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(leafletMap);
+    } else {
+      leafletMap.setView([g.lat,g.lng],15);
+      leafletMap.eachLayer(l=>{if(l instanceof L.Marker||l instanceof L.Circle) leafletMap.removeLayer(l);});
+    }
+    const icon = L.divIcon({
+      html:`<div style="width:24px;height:24px;border-radius:50%;background:#C8161D;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.4)"></div>`,
+      iconSize:[24,24],iconAnchor:[12,12],className:""
+    });
+    L.marker([g.lat,g.lng],{icon}).addTo(leafletMap)
+      .bindPopup(`<b>🎯 จุดเกิดเหตุ</b><br>${currentIncident.incidentAddress||""}`).openPopup();
+    leafletMap.invalidateSize();
+  },150);
+}
+
+/* ═══════════════════════════════════════
+   US-16 · จบเคส
+═══════════════════════════════════════ */
+function handleCloseCase() {
+  if (!selCase)   { showToast("⚠️ กรุณาเลือกเคสก่อน","error"); return; }
+  if (!enrouteAt) { showToast("⚠️ ต้องกด 'กำลังไป' ก่อน","error"); return; }
+
+  const now        = new Date();
+  const travelMin  = gpsStore.arrived ? Math.round((new Date(gpsStore.arrived.time||now) - enrouteAt)/60000) : "–";
+  const onSceneMin = gpsStore.arrived ? Math.round((now - new Date(gpsStore.arrived.time||now))/60000) : "–";
+  const totalMin   = Math.round((now - enrouteAt)/60000);
+
+  document.getElementById("closeModalCaseId").textContent = selCase;
+  document.getElementById("closeModalType").textContent   = document.getElementById("caseSelector").options[document.getElementById("caseSelector").selectedIndex]?.text || "";
+  document.getElementById("ts-travel").textContent  = typeof travelMin  === "number" ? travelMin  : "–";
+  document.getElementById("ts-scene").textContent   = typeof onSceneMin === "number" ? onSceneMin : "–";
+  document.getElementById("ts-total").textContent   = totalMin;
+  document.getElementById("closeNote").value        = "";
+  document.getElementById("closeOverlay").classList.add("open");
+}
+
+function closeCloseModal() {
+  document.getElementById("closeOverlay").classList.remove("open");
+}
+
+async function confirmClose() {
+  const note     = document.getElementById("closeNote").value.trim();
+  const now      = new Date();
+  const totalMin = Math.round((now - enrouteAt)/60000);
+  closeCloseModal();
+  setApiStrip("POST",`/api/cases/${selCase}/close`,"loading","กำลังบันทึก...");
+
+  try {
+    const r = await fetch(`${API}/api/cases/${selCase}/close`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ officerId:ME, note })
+    });
+    const d = await r.json();
+    if (d.success) {
+      setApiStrip("POST",`/api/cases/${selCase}/close`,"ok",d.message);
+      showToast("✅ "+d.message,"success");
+      paintClosed(d.summary?.totalMin||totalMin, note);
+    } else {
+      setApiStrip("POST",`/api/cases/${selCase}/close`,"err",d.message);
+      showToast(d.message,"error"); return;
+    }
+  } catch {
+    paintClosed(totalMin, note);
+    setApiStrip("POST",`/api/cases/${selCase}/close`,"ok","(mock) ปิดเคสสำเร็จ");
+    showToast(`✅ ปิดเคส ${selCase} แล้ว (mock)`,"success");
+  }
+  updateTableStatus(selCase,"closed");
+  logActivity(selCase,`สกล จบเคส ${selCase} · รวม ${totalMin} นาที`,"var(--green)");
+  applyStatus("available");
+  updateFlowGuide("closed");
+}
+
+function paintClosed(totalMin, note) {
+  const c = document.getElementById("card16");
+  c.className = "ac close-state";
+  c.style.pointerEvents = "none";
+  document.getElementById("c16title").textContent = "✅ จบเคสแล้ว";
+  const s = document.getElementById("summary16");
+  s.innerHTML = `
+    <div class="sum-row"><span class="sum-label">เวลารวม</span><span class="sum-val">${totalMin} นาที</span></div>
+    ${note?`<div class="sum-row"><span class="sum-label">หมายเหตุ</span><span class="sum-val">${note}</span></div>`:""}
+  `;
+  s.classList.add("show");
+}
+
+/* ═══════════════════════════════════════
+   US-01 · เปลี่ยนสถานะ Available / Busy
+═══════════════════════════════════════ */
+async function toggleStatus() {
+  const next = myStatus === "available" ? "busy" : "available";
+  setApiStrip("PATCH", `/api/officers/${ME}/status`, "loading", "กำลังส่ง...");
+
+  try {
+    const r = await fetch(`${API}/api/officers/${ME}/status`, {
+      method:"PATCH", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({status:next})
+    });
+    const d = await r.json();
+    if (d.success) { applyStatus(next); setApiStrip("PATCH",`/api/officers/${ME}/status`,"ok",d.message); showToast(d.message,"success"); }
+    else           { setApiStrip("PATCH",`/api/officers/${ME}/status`,"err",d.message); showToast(d.message,"error"); }
+  } catch {
+    applyStatus(next);
+    setApiStrip("PATCH",`/api/officers/${ME}/status`,"ok","(mock) อัปเดตสำเร็จ");
+    showToast((next==="available"?"✅ พร้อมปฏิบัติงาน":"🔴 ไม่ว่าง")+" (mock)","success");
+  }
+  logActivity(null, `สกล เปลี่ยนสถานะ → ${next==="available"?"✅ พร้อม":"🔴 ไม่ว่าง"}`, next==="available"?"var(--green)":"var(--red)");
+}
+
+function applyStatus(s) {
+  myStatus = s;
+  const av = s === "available";
+  document.getElementById("toggleTrack").className = "toggle-track " + s;
+  document.getElementById("toggleThumb").textContent = av ? "🟢" : "🔴";
+  document.getElementById("toggleText").textContent  = av ? "พร้อม" : "ไม่ว่าง";
+  document.getElementById("statusInd").className     = "status-ind " + s;
+  document.getElementById("statusTxt").textContent   = av ? "พร้อมปฏิบัติงาน" : "ไม่ว่าง";
+  document.getElementById("card01").className  = "ac " + (av ? "available-state" : "busy-state");
+  document.getElementById("c01icon").textContent  = av ? "✅" : "🔴";
+  document.getElementById("c01title").textContent = av ? "พร้อมปฏิบัติงาน" : "ไม่ว่าง";
+  document.getElementById("td01").className = "tdot " + (av ? "online" : "busy-dot");
+  document.getElementById("tr01").textContent = "ทีม A · " + (av ? "พร้อมปฏิบัติงาน" : "ไม่ว่าง");
+}
+
+/* ═══════════════════════════════════════
+   US-08 · กำลังไป + บันทึก GPS
+═══════════════════════════════════════ */
+function handleEnroute() {
+  if (!selCase) { showToast("⚠️ กรุณาเลือกเคสก่อน","error"); return; }
+  document.getElementById("c08title").textContent = "⏳ กำลังระบุตำแหน่ง...";
+  setApiStrip("POST",`/api/cases/${selCase}/enroute`,"loading","ดึงค่า GPS...");
+  getGPS()
+    .then(g => doEnroute(g.lat, g.lng, g.acc))
+    .catch(() => doEnroute(13.756 + rnd(), 100.502 + rnd(), null));
+}
+
+async function doEnroute(lat, lng, acc) {
+  enrouteAt = new Date();
+  try {
+    const r = await fetch(`${API}/api/cases/${selCase}/enroute`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({officerId:ME, lat, lng, accuracy:acc})
+    });
+    const d = await r.json();
+    if (d.success) { await paintEnroute(lat,lng,acc); setApiStrip("POST",`/api/cases/${selCase}/enroute`,"ok",d.message); showToast("🚑 "+d.message,"success"); }
+    else { showToast(d.message,"error"); setApiStrip("POST",`/api/cases/${selCase}/enroute`,"err",d.message); }
+  } catch {
+    await paintEnroute(lat,lng,acc);
+    setApiStrip("POST",`/api/cases/${selCase}/enroute`,"ok","(mock) บันทึก 'กำลังไป'");
+    showToast(`🚑 บันทึก 'กำลังไป' เคส ${selCase} แล้ว (mock)`,"success");
+  }
+  updateTableStatus(selCase,"enroute");
+  logActivity(selCase,"สกล กำลังไป "+selCase,"var(--yellow)");
+  updateFlowGuide("enroute");
+}
+
+async function paintEnroute(lat,lng,acc) {
+  document.getElementById("card08").className = "ac enroute-state";
+  document.getElementById("c08title").textContent = "🟡 กำลังไปแล้ว";
+  const g = document.getElementById("gps08");
+  g.innerHTML = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}${acc?" <small>(±"+acc+"m)</small>":""}<br><span style="color:#666;font-size:10px">⏳ กำลังระบุที่อยู่...</span>`;
+  g.classList.add("show");
+  const t = document.getElementById("time08");
+  t.textContent = "เวลา "+enrouteAt.toLocaleTimeString("th-TH",{hour12:false});
+  t.classList.add("show");
+  document.getElementById("card09").classList.remove("disabled");
+
+  // Store GPS
+  gpsStore.enroute = { lat, lng, acc, time: enrouteAt.toLocaleTimeString("th-TH",{hour12:false}), addr: null, ts: enrouteAt.getTime() };
+
+  // Reverse geocode
+  const addr = await reverseGeocode(lat, lng);
+  if (addr) {
+    g.innerHTML = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}${acc?" <small>(±"+acc+"m)</small>":""}<br><span style="color:#1a4a1a;font-size:11px;font-weight:600">🏠 ${addr}</span>`;
+    gpsStore.enroute.addr = addr;
+    document.getElementById("mapAddr") && (document.getElementById("mapAddr").textContent = addr);
+  }
+
+  // US-11 · โหลดแผนที่จุดเกิดเหตุทันที (< 3 วิ)
+  initSceneMap(lat, lng, addr || `${lat.toFixed(5)}, ${lng.toFixed(5)}`, "enroute");
+}
+
+/* ═══════════════════════════════════════
+   US-09 · ถึงที่เกิดเหตุ
+═══════════════════════════════════════ */
+function handleArrived() {
+  if (!selCase)   { showToast("⚠️ กรุณาเลือกเคสก่อน","error"); return; }
+  if (!enrouteAt) { showToast("⚠️ ต้องกด 'กำลังไป' ก่อน!","error"); return; }
+  setApiStrip("POST",`/api/cases/${selCase}/arrived`,"loading","ดึงค่า GPS...");
+  getGPS()
+    .then(g => doArrived(g.lat, g.lng, g.acc))
+    .catch(() => doArrived(13.756 + rnd(), 100.502 + rnd(), null));
+}
+
+async function doArrived(lat, lng, acc) {
+  const now     = new Date();
+  const travelMin = Math.round((now - enrouteAt) / 60000);
+  try {
+    const r = await fetch(`${API}/api/cases/${selCase}/arrived`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({officerId:ME, lat, lng, accuracy:acc})
+    });
+    const d = await r.json();
+    if (d.success) { await paintArrived(lat,lng,acc,now,d.travelMin??travelMin); setApiStrip("POST",`/api/cases/${selCase}/arrived`,"ok",d.message); showToast("📍 "+d.message,"success"); }
+    else { showToast(d.message,"error"); setApiStrip("POST",`/api/cases/${selCase}/arrived`,"err",d.message); }
+  } catch {
+    await paintArrived(lat,lng,acc,now,travelMin);
+    setApiStrip("POST",`/api/cases/${selCase}/arrived`,"ok","(mock) บันทึก 'ถึงที่เกิดเหตุ'");
+    showToast(`📍 ถึงที่เกิดเหตุ เคส ${selCase} แล้ว (mock)`,"success");
+  }
+  updateTableStatus(selCase,"on_scene");
+  logActivity(selCase,"สกล ถึงที่เกิดเหตุ "+selCase,"var(--red)");
+  updateFlowGuide("arrived");
+}
+
+async function paintArrived(lat,lng,acc,time,min) {
+  const c = document.getElementById("card09");
+  c.className = "ac done-state";
+  document.getElementById("c09title").textContent = "🔴 ถึงที่เกิดเหตุแล้ว";
+  document.getElementById("c09sub").innerHTML = `เวลาเดินทาง <b>${min} นาที</b><code>POST /api/cases/:id/arrived</code>`;
+  const g = document.getElementById("gps09");
+  g.innerHTML = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}${acc?" <small>(±"+acc+"m)</small>":""}<br><span style="color:#666;font-size:10px">⏳ กำลังระบุที่อยู่...</span>`;
+  g.classList.add("show");
+  const t = document.getElementById("time09");
+  t.textContent = "เวลา "+time.toLocaleTimeString("th-TH",{hour12:false});
+  t.classList.add("show");
+
+  // Store GPS
+  gpsStore.arrived = { lat, lng, acc, time: time.toLocaleTimeString("th-TH",{hour12:false}), addr: null, ts: time.getTime() };
+
+  // Reverse geocode
+  const addr = await reverseGeocode(lat, lng);
+  if (addr) {
+    g.innerHTML = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}${acc?" <small>(±"+acc+"m)</small>":""}<br><span style="color:#7f1d1d;font-size:11px;font-weight:600">🏠 ${addr}</span>`;
+    gpsStore.arrived.addr = addr;
+  }
+
+  // US-16 · ปลดล็อคปุ่มจบเคส
+  document.getElementById("card16").classList.remove("disabled");
+}
+
+/* ═══════════════════════════════════════
+   US-11 · แผนที่จุดเกิดเหตุ Cache/Lazy Load (ใช้ incidentLeaflet แทน)
+═══════════════════════════════════════ */
+function initSceneMap() {} // ถูกแทนที่ด้วย renderIncident แล้ว
+function getGPS() {
+  return new Promise((res,rej) => {
+    if (!navigator.geolocation) { rej(); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => res({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy)}),
+      ()=>rej(), {timeout:6000,maximumAge:0}
+    );
+  });
+}
+function rnd() { return (Math.random()-0.5)*0.04; }
+
+/* ─── REVERSE GEOCODING (Nominatim / OpenStreetMap) ─── */
+async function reverseGeocode(lat, lng) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=th`;
+    const r = await fetch(url, {
+      headers: {
+        "Accept-Language": "th,en;q=0.9",
+        "User-Agent": "PohTeckTung-RescueApp/1.0"
+      }
+    });
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    const a = d.address || {};
+
+    const road         = a.road || a.pedestrian || a.footway || "";
+    const subdistrict  = a.suburb || a.village || a.quarter || a.neighbourhood || a.hamlet || a.residential || "";
+    const district     = a.city_district || a.district || a.town || a.municipality || "";
+    const province     = a.state || a.county || "";
+
+    const parts = [road, subdistrict, district, province].filter(Boolean);
+    if (parts.length > 0) return parts.join(" · ");
+
+    // fallback: ใช้ display_name ตัดสั้น
+    const dn = (d.display_name || "").split(",");
+    return dn.slice(0, 4).join(",").trim() || "ไม่พบข้อมูลที่อยู่";
+  } catch(e) {
+    console.warn("Geocode error:", e);
+    return null;
+  }
+}
+
+function updateTableStatus(id, s) {
+  const el = document.getElementById("st-"+id);
+  if (!el) return;
+  const map = {
+    enroute:  '<span class="status-badge s-enroute">🟡 กำลังไป</span>',
+    on_scene: '<span class="status-badge s-onscene">🔴 ในพื้นที่</span>',
+    closed:   '<span class="status-badge s-complete">✅ เสร็จสิ้น</span>',
+  };
+  if (map[s]) el.innerHTML = map[s];
+}
+
+function setApiStrip(method, path, st, msg) {
+  document.getElementById("apm").className = "apm "+method.toLowerCase();
+  document.getElementById("apm").textContent = method;
+  document.getElementById("apath").textContent = path;
+  const b = document.getElementById("apb");
+  b.className = "apb "+st;
+  b.textContent = st==="loading"?"⏳ กำลังส่ง":st==="ok"?"✅ สำเร็จ":st==="err"?"❌ ผิดพลาด":"รอดำเนินการ";
+  document.getElementById("amsg").textContent = msg||"";
+}
+
+function logActivity(caseId, text, color) {
+  const list = document.getElementById("activityList");
+  const d = document.createElement("div");
+  d.className = "activity-item";
+  d.style.cssText = "animation:su .3s ease;background:#fffbf5";
+  d.innerHTML = `<div class="act-dot" style="background:${color}"></div><div><div class="act-text">${caseId?"<b>"+caseId+"</b> · ":""}${text}</div><div class="act-time">เพิ่งกี้นี้</div></div>`;
+  list.prepend(d);
+  setTimeout(()=>d.style.background="",2000);
+}
+
+/* ─── MAP ─── */
+let leafletMap = null;
+let gpsStore   = { enroute: null, arrived: null };
+
+function openMap(type) {
+  const pt = gpsStore[type];
+  if (!pt) return;
+
+  const overlay = document.getElementById("mapOverlay");
+  overlay.classList.add("open");
+
+  const title = type === "enroute" ? "🟡 ตำแหน่ง กำลังไป" : "🔴 ตำแหน่ง ถึงที่เกิดเหตุ";
+  document.getElementById("mapTitle").textContent = title;
+  document.getElementById("mapSubtitle").textContent = `เคส ${selCase || ""} · ${pt.time}`;
+  document.getElementById("mapCoords").textContent = `${pt.lat.toFixed(6)}, ${pt.lng.toFixed(6)}${pt.acc ? " (±"+pt.acc+"m)" : ""}`;
+  document.getElementById("mapAddr").textContent = pt.addr || "กำลังโหลดที่อยู่...";
+
+  // Init or update map
+  setTimeout(() => {
+    if (!leafletMap) {
+      leafletMap = L.map("mapContainer").setView([pt.lat, pt.lng], 16);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+        maxZoom: 19,
+      }).addTo(leafletMap);
+    } else {
+      leafletMap.setView([pt.lat, pt.lng], 16);
+      leafletMap.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.Circle) leafletMap.removeLayer(l); });
+    }
+
+    // Custom marker
+    const icon = L.divIcon({
+      html: `<div style="width:20px;height:20px;border-radius:50%;background:${type==="enroute"?"#CA8A04":"#C8161D"};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,
+      iconSize: [20, 20], iconAnchor: [10, 10], className: ""
+    });
+    const marker = L.marker([pt.lat, pt.lng], { icon }).addTo(leafletMap);
+    marker.bindPopup(`
+      <div style="font-family:Sarabun,sans-serif;min-width:180px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">${type==="enroute"?"🟡 กำลังไป":"🔴 ถึงที่เกิดเหตุ"}</div>
+        <div style="font-size:12px;color:#555">${pt.addr || ""}</div>
+        <div style="font-size:11px;color:#888;margin-top:4px">⏰ ${pt.time}</div>
+      </div>
+    `).openPopup();
+
+    // Accuracy circle
+    if (pt.acc) {
+      L.circle([pt.lat, pt.lng], {
+        radius: pt.acc,
+        color: type==="enroute"?"#CA8A04":"#C8161D",
+        fillColor: type==="enroute"?"#FEF9C3":"#FEE2E2",
+        fillOpacity: 0.3, weight: 1,
+      }).addTo(leafletMap);
+    }
+
+    leafletMap.invalidateSize();
+  }, 100);
+}
+
+function closeMap() {
+  document.getElementById("mapOverlay").classList.remove("open");
+}
+document.getElementById("mapOverlay").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeMap();
+});
+document.getElementById("closeOverlay").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeCloseModal();
+});
+
+/* ═══════════════════════════════════════
+   FLOW GUIDE – บอกขั้นตอนถัดไป
+═══════════════════════════════════════ */
+function updateFlowGuide(step) {
+  // step: 'accepted' | 'enroute' | 'arrived' | 'closed' | null
+  const guide = document.getElementById("flowGuide");
+  const steps = {
+    accept:  document.getElementById("fs-accept"),
+    review:  document.getElementById("fs-review"),
+    enroute: document.getElementById("fs-enroute"),
+    arrived: document.getElementById("fs-arrived"),
+    close:   document.getElementById("fs-close"),
+  };
+  const hint = document.getElementById("flowHint");
+
+  if (!step) { guide.classList.remove("show"); return; }
+  guide.classList.add("show");
+
+  // reset all
+  Object.values(steps).forEach(el => el.className = "flow-step pending");
+
+  if (step === "accepted") {
+    steps.accept.className  = "flow-step done";
+    steps.review.className  = "flow-step active";
+    steps.enroute.className = "flow-step active";
+    hint.textContent = "👇 ดูจุดเกิดเหตุด้านล่าง แล้วกด 🚑 กำลังไป";
+  } else if (step === "enroute") {
+    steps.accept.className  = "flow-step done";
+    steps.review.className  = "flow-step done";
+    steps.enroute.className = "flow-step done";
+    steps.arrived.className = "flow-step active";
+    hint.textContent = "📍 เดินทางถึงแล้ว กด 'ถึงที่เกิดเหตุ'";
+  } else if (step === "arrived") {
+    steps.accept.className  = "flow-step done";
+    steps.review.className  = "flow-step done";
+    steps.enroute.className = "flow-step done";
+    steps.arrived.className = "flow-step done";
+    steps.close.className   = "flow-step active";
+    hint.textContent = "🏁 ปฏิบัติงานเสร็จ กด 'จบเคส' เพื่อสรุป";
+  } else if (step === "closed") {
+    Object.values(steps).forEach(el => el.className = "flow-step done");
+    hint.textContent = "✅ เคสนี้เสร็จสิ้นแล้ว";
+    hint.style.background = "rgba(22,163,74,.2)";
+    hint.style.borderColor = "rgba(22,163,74,.4)";
+    hint.style.color = "#86efac";
+    hint.style.animation = "none";
+  }
+}
+// ข้อมูลเคสที่โหลดมาเก็บไว้ใน memory
+const casesData = {
+  "PTT-24001": { id:"PTT-24001", type:"อุบัติเหตุ", priority:"critical", location:"ถ.พระราม 2 กม.15", status:"on_scene", reporterName:"ศิริพร ม.", reporterPhone:"081-234-5678", injuredCount:2, note:"", createdAt:null, enrouteAt:null, enrouteAddress:null, arrivedAt:null, arrivedAddress:null, closedAt:null, travelMin:null, totalMin:null, incidentGps:{lat:13.668,lng:100.472}, incidentAddress:"ถนนพระราม 2 บางมด จอมทอง กรุงเทพฯ", incidentPhoto:null },
+  "PTT-24004": { id:"PTT-24004", type:"ช่วยเหลือทั่วไป", priority:"normal", location:"บ้านพัก ถ.เพชรบุรี", status:"waiting", reporterName:"สมศักดิ์ พ.", reporterPhone:"082-345-6789", injuredCount:0, note:"", createdAt:null, enrouteAt:null, enrouteAddress:null, arrivedAt:null, arrivedAddress:null, closedAt:null, travelMin:null, totalMin:null, incidentGps:{lat:13.744,lng:100.540}, incidentAddress:"ถนนเพชรบุรี ราชเทวี กรุงเทพฯ", incidentPhoto:null },
+  "PTT-24005": { id:"PTT-24005", type:"อุบัติเหตุ", priority:"high", location:"แยกลาดกระบัง", status:"waiting", reporterName:"มูลนิธิรวมใจ", reporterPhone:"083-456-7890", injuredCount:1, note:"", createdAt:null, enrouteAt:null, enrouteAddress:null, arrivedAt:null, arrivedAddress:null, closedAt:null, travelMin:null, totalMin:null, incidentGps:{lat:13.726,lng:100.751}, incidentAddress:"แยกลาดกระบัง กรุงเทพฯ", incidentPhoto:null },
+};
+
+async function refreshCaseSelector() {
+  try {
+    const r = await fetch(`${API}/api/cases`);
+    const d = await r.json();
+    if (d.success) {
+      // อัปเดต casesData
+      d.data.forEach(c => { casesData[c.id] = c; });
+      populateCaseSelector(d.data);
+      showToast("🔄 โหลดเคสล่าสุดแล้ว","success");
+    }
+  } catch {
+    // mock: ใช้ข้อมูลที่มีอยู่
+    populateCaseSelector(Object.values(casesData));
+    showToast("🔄 โหลดเคส (mock)","info");
+  }
+}
+
+function populateCaseSelector(caseList) {
+  const sel = document.getElementById("caseSelector");
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- เลือกเคส --</option>';
+  // กรองเฉพาะที่ยังไม่ปิด
+  const active = caseList.filter(c => c.status !== "closed");
+  active.forEach(c => {
+    const pTh = c.priority==="critical"?"วิกฤต":c.priority==="high"?"สูง":"ปกติ";
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.dataset.priority = c.priority;
+    opt.textContent = `${c.id} · ${c.type} · ${c.location} (${pTh})`;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+/* ═══════════════════════════════════════
+   EDIT CASE MODAL
+═══════════════════════════════════════ */
+let editCaseId = null;
+
+async function openEditCase(caseId) {
+  editCaseId = caseId;
+  document.getElementById("edit-caseId-label").textContent = caseId;
+  document.getElementById("e-error").style.display = "none";
+  document.getElementById("e-reason").value = "";
+  const btn = document.getElementById("e-submit-btn");
+  btn.disabled = false;
+  btn.textContent = "💾 บันทึกการแก้ไข";
+
+  // โหลดข้อมูลล่าสุดจาก API
+  let c = casesData[caseId];
+  try {
+    const r = await fetch(`${API}/api/cases/${caseId}`);
+    const d = await r.json();
+    if (d.success) { casesData[caseId] = d.data; c = d.data; }
+  } catch {}
+  if (!c) { showToast("ไม่พบข้อมูลเคส","error"); return; }
+
+  // เติมฟอร์ม
+  document.getElementById("e-type").value     = c.type     || "";
+  document.getElementById("e-priority").value = c.priority || "normal";
+  document.getElementById("e-location").value = c.location || "";
+  document.getElementById("e-reporter").value = c.reporterName  || "";
+  document.getElementById("e-phone").value    = c.reporterPhone || "";
+  document.getElementById("e-injured").value  = c.injuredCount != null ? c.injuredCount : 0;
+  document.getElementById("e-officer").value  = c.assignedOfficer || "";
+  document.getElementById("e-note").value     = c.note || "";
+
+  // แสดงประวัติการแก้ไข
+  const histBox  = document.getElementById("edit-history-box");
+  const histList = document.getElementById("edit-history-list");
+  if (c.editHistory && c.editHistory.length > 0) {
+    histBox.style.display = "block";
+    histList.innerHTML = c.editHistory.slice(0,5).map(h =>
+      `<div class="edit-hist-row">
+        <span>${new Date(h.editedAt).toLocaleString("th-TH",{hour12:false})}</span>
+        <span style="font-weight:600;margin:0 8px">${h.reason||"–"}</span>
+        <span style="color:#888">${h.editedBy||"–"}</span>
+      </div>`
+    ).join("");
+  } else {
+    histBox.style.display = "none";
+  }
+
+  document.getElementById("editOverlay").classList.add("open");
+}
+
+function closeEditCase() {
+  document.getElementById("editOverlay").classList.remove("open");
+  editCaseId = null;
+}
+
+async function submitEditCase() {
+  const reason = document.getElementById("e-reason").value.trim();
+  const errEl  = document.getElementById("e-error");
+  if (!reason) {
+    errEl.textContent = "⚠️ กรุณาระบุสาเหตุที่แก้ไข";
+    errEl.style.display = "block";
+    return;
+  }
+  errEl.style.display = "none";
+  const btn = document.getElementById("e-submit-btn");
+  btn.disabled = true;
+  btn.textContent = "⏳ กำลังบันทึก...";
+
+  const payload = {
+    type:            document.getElementById("e-type").value,
+    priority:        document.getElementById("e-priority").value,
+    location:        document.getElementById("e-location").value.trim(),
+    reporterName:    document.getElementById("e-reporter").value.trim(),
+    reporterPhone:   document.getElementById("e-phone").value.trim(),
+    injuredCount:    parseInt(document.getElementById("e-injured").value)||0,
+    assignedOfficer: document.getElementById("e-officer").value||null,
+    note:            document.getElementById("e-note").value.trim(),
+    reason,
+    editedBy: "สกล รักษ์ชาติ",
+  };
+
+  try {
+    const r = await fetch(`${API}/api/cases/${editCaseId}`, {
+      method:"PATCH", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (d.success) {
+      casesData[editCaseId] = d.data;
+      closeEditCase();
+      showToast(`✅ แก้ไขเคส ${editCaseId} เรียบร้อย`, "success");
+      logActivity(editCaseId, `✏️ แก้ไขข้อมูล · ${reason}`, "var(--orange)");
+      if (incidentCache[editCaseId]) delete incidentCache[editCaseId];
+    } else {
+      errEl.textContent = "❌ " + d.message;
+      errEl.style.display = "block";
+      btn.disabled = false; btn.textContent = "💾 บันทึกการแก้ไข";
+    }
+  } catch {
+    // mock
+    if (casesData[editCaseId]) {
+      Object.assign(casesData[editCaseId], payload);
+      if (!casesData[editCaseId].editHistory) casesData[editCaseId].editHistory = [];
+      casesData[editCaseId].editHistory.unshift({ editedAt: new Date().toISOString(), reason, editedBy: payload.editedBy });
+    }
+    closeEditCase();
+    showToast(`✅ แก้ไขเคส ${editCaseId} แล้ว (mock)`, "success");
+    logActivity(editCaseId, `✏️ แก้ไขข้อมูล · ${reason}`, "var(--orange)");
+    if (incidentCache[editCaseId]) delete incidentCache[editCaseId];
+  }
+}
+
+document.getElementById("editOverlay").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeEditCase();
+});
+
+/* ═══════════════════════════════════════
+   CASE DETAIL MODAL
+═══════════════════════════════════════ */
+let detailCaseId = null;
+
+async function openCaseDetail(caseId) {
+  detailCaseId = caseId;
+  document.getElementById("detailOverlay").classList.add("open");
+
+  // ลองโหลดจาก API ก่อน
+  let c = casesData[caseId];
+  try {
+    const r = await fetch(`${API}/api/cases/${caseId}`);
+    const d = await r.json();
+    if (d.success) {
+      casesData[caseId] = d.data;
+      c = d.data;
+    }
+  } catch {}
+
+  if (!c) { showToast("ไม่พบข้อมูลเคส","error"); return; }
+
+  // หัว
+  document.getElementById("d-caseId").textContent = c.id;
+  document.getElementById("d-type").textContent   = c.type || "–";
+  const pClass = c.priority==="critical"?"p-critical":c.priority==="high"?"p-high":"p-normal";
+  const pText  = c.priority==="critical"?"⚠️ วิกฤต":c.priority==="high"?"🔶 สูง":"🔵 ปกติ";
+  document.getElementById("d-priorityBadge").className = `priority-badge ${pClass}`;
+  document.getElementById("d-priorityBadge").textContent = pText;
+
+  // ข้อมูล
+  document.getElementById("d-location").textContent  = c.location || "–";
+  document.getElementById("d-reporter").textContent  = c.reporterName  || "ไม่ระบุ";
+  document.getElementById("d-phone").textContent     = c.reporterPhone || "ไม่ระบุ";
+  document.getElementById("d-injured").textContent   = c.injuredCount != null ? `${c.injuredCount} คน` : "ไม่ระบุ";
+  document.getElementById("d-note").textContent      = c.note || "–";
+  document.getElementById("d-createdAt").textContent = c.createdAt ? new Date(c.createdAt).toLocaleString("th-TH") : "–";
+
+  // รูปภาพ
+  const photo   = document.getElementById("d-photo");
+  const noPhoto = document.getElementById("d-no-photo");
+  if (c.incidentPhoto) {
+    photo.src = c.incidentPhoto;
+    photo.classList.add("show");
+    noPhoto.style.display = "none";
+  } else {
+    photo.classList.remove("show");
+    noPhoto.style.display = "block";
+  }
+
+  // Timeline
+  const fmt = iso => iso ? new Date(iso).toLocaleString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : null;
+  setTlItem("created", !!c.createdAt,  fmt(c.createdAt)||"–",        "", true);
+  setTlItem("enroute", !!c.enrouteAt,  fmt(c.enrouteAt)||"ยังไม่ได้กด", c.enrouteAddress||"");
+  setTlItem("arrived", !!c.arrivedAt,  fmt(c.arrivedAt)||"ยังไม่ถึง",   c.arrivedAddress||"");
+  setTlItem("closed",  !!c.closedAt,   fmt(c.closedAt)||"ยังไม่จบ",     "");
+  document.getElementById("tl-summary").textContent = c.totalMin != null ? `⏱️ รวม ${c.totalMin} นาที` : "";
+
+  // GPS
+  if (c.incidentGps) {
+    document.getElementById("d-gps-section").style.display = "block";
+    document.getElementById("d-inc-addr").textContent   = c.incidentAddress || "–";
+    document.getElementById("d-inc-coords").textContent = `${c.incidentGps.lat.toFixed(6)}, ${c.incidentGps.lng.toFixed(6)}`;
+    document.getElementById("d-nav-btn").style.display  = "inline-flex";
+  } else {
+    document.getElementById("d-gps-section").style.display = "none";
+    document.getElementById("d-nav-btn").style.display  = "none";
+  }
+
+  // ปุ่มเลือกเคส
+  const selectBtn = document.getElementById("d-select-btn");
+  if (c.status === "closed") {
+    selectBtn.style.display = "none";
+  } else {
+    selectBtn.style.display = "inline-flex";
+    selectBtn.textContent   = c.status === "waiting" ? "✅ รับเคสนี้" : "📋 เลือกเคสนี้";
+  }
+}
+
+function setTlItem(key, isDone, timeText, addr, isFirst=false) {
+  const dot = document.getElementById(`tl-dot-${key}`);
+  dot.className = "tl-dot " + (isDone ? (key==="closed"?"done":"done") : "pending");
+  document.getElementById(`tl-${key}`).textContent = timeText;
+  const addrEl = document.getElementById(`tl-${key}-addr`);
+  if (addrEl) addrEl.textContent = addr;
+}
+
+function closeCaseDetail() {
+  document.getElementById("detailOverlay").classList.remove("open");
+  detailCaseId = null;
+}
+
+function selectFromDetail() {
+  if (!detailCaseId) return;
+  closeCaseDetail();
+  quickSel(detailCaseId);
+}
+
+function openDetailNav() {
+  const c = casesData[detailCaseId];
+  if (c?.incidentGps) {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.incidentGps.lat},${c.incidentGps.lng}&travelmode=driving`,"_blank");
+  }
+}
+
+document.getElementById("detailOverlay").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeCaseDetail();
+});
+
+/* ═══════════════════════════════════════
+   GEOCODING + MAP PIN (ฟอร์มรับเคสใหม่)
+═══════════════════════════════════════ */
+let formMap        = null;
+let formMapMarker  = null;
+let geocodeTimer   = null;
+let newCasePhotoBase64 = null;
+
+function openModal() {
+  // reset fields
+  ["f-reporter","f-phone","f-location","f-note"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("f-lat").value = "";
+  document.getElementById("f-lng").value = "";
+  document.getElementById("f-type").selectedIndex = 0;
+  document.getElementById("f-priority").selectedIndex = 0;
+  document.getElementById("f-officer").selectedIndex = 0;
+  document.getElementById("f-injured").value = "0";
+  document.getElementById("f-error").style.display = "none";
+  document.getElementById("f-photo-preview").style.display = "none";
+  document.getElementById("f-photo-status").textContent = "";
+  document.getElementById("f-submit-btn").disabled = false;
+  document.getElementById("f-submit-btn").textContent = "✓ บันทึกเคส";
+  document.getElementById("geocode-results").style.display = "none";
+  document.getElementById("geocode-selected").style.display = "none";
+  document.getElementById("geocode-status").textContent = "";
+  document.getElementById("map-pin-info").style.display = "none";
+  document.getElementById("formMapWrap").style.borderColor = "var(--border)";
+  newCasePhotoBase64 = null;
+  document.getElementById("caseModal").classList.add("open");
+
+  // init แผนที่หลังเปิด modal
+  setTimeout(() => {
+    if (!formMap) {
+      formMap = L.map("formMap", { zoomControl: true, attributionControl: false })
+        .setView([13.7563, 100.5018], 10); // กลางกรุงเทพ
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 })
+        .addTo(formMap);
+      // คลิกบนแผนที่ → ปักหมุด
+      formMap.on("click", onFormMapClick);
+    }
+    formMap.invalidateSize();
+    // ถ้ามี marker เก่า ลบ
+    if (formMapMarker) { formMap.removeLayer(formMapMarker); formMapMarker = null; }
+  }, 200);
+}
+
+async function onFormMapClick(e) {
+  const { lat, lng } = e.latlng;
+  setFormPin(lat, lng);
+  // reverse geocode
+  document.getElementById("map-pin-addr").textContent = "⏳ กำลังระบุที่อยู่...";
+  const addr = await reverseGeocode(lat, lng);
+  if (addr) {
+    document.getElementById("map-pin-addr").textContent = addr;
+    // ถ้ายังไม่มีข้อความในช่อง location ให้ autofill
+    const locEl = document.getElementById("f-location");
+    if (!locEl.value.trim()) locEl.value = addr;
+    // อัปเดต geocode-selected ด้วย
+    applyGeocodePick(lat, lng, addr);
+  }
+}
+
+function setFormPin(lat, lng) {
+  // อัปเดตพิกัด hidden
+  document.getElementById("f-lat").value = lat;
+  document.getElementById("f-lng").value = lng;
+  document.getElementById("formMapWrap").style.borderColor = "var(--red)";
+  document.getElementById("map-pin-info").style.display = "flex";
+  document.getElementById("map-pin-coords").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  document.getElementById("formMapHint").style.display = "none";
+
+  // วางหมุด
+  const pinIcon = L.divIcon({
+    html: `<div style="width:20px;height:20px;border-radius:50%;background:#C8161D;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,
+    iconSize: [20,20], iconAnchor: [10,10], className: ""
+  });
+  if (formMapMarker) formMap.removeLayer(formMapMarker);
+  formMapMarker = L.marker([lat, lng], { icon: pinIcon, draggable: true }).addTo(formMap);
+
+  // ลาก marker ได้
+  formMapMarker.on("dragend", async (ev) => {
+    const pos = ev.target.getLatLng();
+    setFormPin(pos.lat, pos.lng);
+    const addr = await reverseGeocode(pos.lat, pos.lng);
+    if (addr) {
+      document.getElementById("map-pin-addr").textContent = addr;
+      applyGeocodePick(pos.lat, pos.lng, addr);
+    }
+  });
+
+  formMap.setView([lat, lng], 15);
+}
+
+function clearMapPin() {
+  if (formMapMarker) { formMap.removeLayer(formMapMarker); formMapMarker = null; }
+  document.getElementById("f-lat").value = "";
+  document.getElementById("f-lng").value = "";
+  document.getElementById("map-pin-info").style.display = "none";
+  document.getElementById("formMapWrap").style.borderColor = "var(--border)";
+  document.getElementById("formMapHint").style.display = "block";
+}
+
+/* ─── GEOCODE by name (Nominatim) ─── */
+let _geocodeAbort = null;
+
+async function geocodeLocation() {
+  const q = document.getElementById("f-location").value.trim();
+  if (!q) { showToast("⚠️ กรุณาพิมพ์ชื่อสถานที่ก่อน","error"); return; }
+
+  const btn = document.getElementById("geocodeBtn");
+  btn.textContent = "⏳ ค้นหา...";
+  btn.disabled = true;
+  document.getElementById("geocode-status").textContent = "🔍 กำลังค้นหา...";
+  document.getElementById("geocode-results").style.display = "none";
+  document.getElementById("geocode-selected").style.display = "none";
+
+  try {
+    // เพิ่ม "ประเทศไทย" ถ้าไม่มีเพื่อให้ผลตรงกว่า
+    const query = q.includes("ไทย") || q.includes("Thailand") ? q : q + " ประเทศไทย";
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6&accept-language=th`;
+    const r = await fetch(url, { headers: { "Accept-Language": "th,en;q=0.9", "User-Agent": "PohTeckTung-RescueApp/1.0" } });
+    const data = await r.json();
+
+    if (!data.length) {
+      document.getElementById("geocode-status").textContent = "❌ ไม่พบตำแหน่งนี้ ลองพิมพ์ชื่อให้ละเอียดขึ้น";
+    } else {
+      document.getElementById("geocode-status").textContent = `พบ ${data.length} ผลลัพธ์ — กรุณาเลือก`;
+      renderGeocodeResults(data);
+    }
+  } catch {
+    document.getElementById("geocode-status").textContent = "⚠️ ไม่สามารถค้นหาได้ (ตรวจสอบอินเทอร์เน็ต)";
+  }
+
+  btn.textContent = "🔍 ดึง GPS";
+  btn.disabled = false;
+}
+
+function renderGeocodeResults(results) {
+  const box = document.getElementById("geocode-results");
+  box.style.display = "block";
+  box.innerHTML = "";
+  results.forEach((item, i) => {
+    const a = item.address || {};
+    const road    = a.road || a.pedestrian || "";
+    const sub     = a.suburb || a.village || a.quarter || a.neighbourhood || "";
+    const dist    = a.city_district || a.district || a.town || a.city || a.municipality || "";
+    const prov    = a.state || a.county || "";
+    const label   = [road, sub, dist, prov].filter(Boolean).join(" · ") || item.display_name.split(",").slice(0,3).join(",");
+    const typeStr = item.type || item.class || "";
+
+    const el = document.createElement("div");
+    el.style.cssText = "padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;transition:background .15s";
+    el.onmouseover = () => el.style.background = "#fff8f0";
+    el.onmouseout  = () => el.style.background = "";
+    el.innerHTML = `
+      <span style="font-size:18px;flex-shrink:0;margin-top:1px">📍</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">${label}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;font-family:monospace">${parseFloat(item.lat).toFixed(6)}, ${parseFloat(item.lon).toFixed(6)}</div>
+      </div>
+      <span style="font-size:10px;background:#f3f4f6;padding:2px 6px;border-radius:4px;color:#666;flex-shrink:0;margin-top:3px">${typeStr}</span>
+    `;
+    el.onclick = () => applyGeocodePick(parseFloat(item.lat), parseFloat(item.lon), label);
+    box.appendChild(el);
+  });
+}
+
+function applyGeocodePick(lat, lng, label) {
+  // ซ่อน results
+  document.getElementById("geocode-results").style.display = "none";
+  document.getElementById("geocode-status").textContent = "";
+
+  // แสดง selected
+  const sel = document.getElementById("geocode-selected");
+  sel.style.display = "block";
+  document.getElementById("geocode-addr").textContent   = label;
+  document.getElementById("geocode-coords").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+  // set hidden fields
+  document.getElementById("f-lat").value = lat;
+  document.getElementById("f-lng").value = lng;
+
+  // ปักหมุดบนแผนที่ด้วย
+  setFormPin(lat, lng);
+  document.getElementById("map-pin-addr").textContent   = label;
+  document.getElementById("map-pin-coords").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
+function clearGeocode() {
+  document.getElementById("geocode-selected").style.display = "none";
+  document.getElementById("geocode-results").style.display  = "none";
+  document.getElementById("geocode-status").textContent     = "";
+  clearMapPin();
+}
+
+// พิมพ์แล้วค้นอัตโนมัติ (debounce 600ms)
+function onLocationInput() {
+  clearTimeout(geocodeTimer);
+  const q = document.getElementById("f-location").value.trim();
+  if (q.length < 3) {
+    document.getElementById("geocode-results").style.display = "none";
+    return;
+  }
+  geocodeTimer = setTimeout(geocodeLocation, 700);
+}
+function closeModal() {
+  closeCamera();
+  document.getElementById("caseModal").classList.remove("open");
+}
+document.getElementById("caseModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeModal(); });
+
+function onNewCasePhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showToast("⚠️ รูปใหญ่เกิน 10MB","error"); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    newCasePhotoBase64 = e.target.result;
+    document.getElementById("f-photo-img").src = newCasePhotoBase64;
+    document.getElementById("f-photo-preview").style.display = "block";
+    document.getElementById("f-photo-status").textContent = "✅ เลือกรูปแล้ว";
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeNewCasePhoto() {
+  newCasePhotoBase64 = null;
+  document.getElementById("f-photo-img").src = "";
+  document.getElementById("f-photo-preview").style.display = "none";
+  document.getElementById("f-photo-status").textContent = "";
+  document.getElementById("f-photo").value = "";
+  document.getElementById("photo-btn-group").style.display = "flex";
+}
+
+/* ─── IN-APP CAMERA ─── */
+let cameraStream = null;
+
+async function openInAppCamera() {
+  const wrap = document.getElementById("camera-wrap");
+  const video = document.getElementById("camera-video");
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    video.srcObject = cameraStream;
+    wrap.style.display = "block";
+    document.getElementById("photo-btn-group").style.display = "none";
+    document.getElementById("f-photo-preview").style.display = "none";
+    document.getElementById("f-photo-status").textContent = "🎥 กล้องเปิดแล้ว — กด 📸 เพื่อถ่ายรูป";
+    // scroll ให้เห็นกล้อง
+    wrap.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (err) {
+    // ถ้าเบราว์เซอร์ไม่รองรับ หรือ deny → fallback ไปที่ file input
+    document.getElementById("f-photo-status").textContent = "⚠️ ไม่สามารถเปิดกล้องในแอปได้ กรุณาเลือกรูปจากเครื่องแทน";
+    document.getElementById("f-photo").setAttribute("capture", "environment");
+    document.getElementById("f-photo").click();
+  }
+}
+
+function capturePhoto() {
+  const video  = document.getElementById("camera-video");
+  const canvas = document.getElementById("camera-canvas");
+  canvas.width  = video.videoWidth  || 1280;
+  canvas.height = video.videoHeight || 720;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const base64 = canvas.toDataURL("image/jpeg", 0.85);
+  // แสดง preview
+  newCasePhotoBase64 = base64;
+  document.getElementById("f-photo-img").src = base64;
+  document.getElementById("f-photo-preview").style.display = "block";
+  document.getElementById("f-photo-status").textContent = "✅ ถ่ายรูปสำเร็จ";
+  document.getElementById("photo-btn-group").style.display = "flex";
+  closeCamera();
+}
+
+function closeCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  document.getElementById("camera-wrap").style.display = "none";
+  document.getElementById("camera-video").srcObject = null;
+  document.getElementById("photo-btn-group").style.display = "flex";
+  if (!newCasePhotoBase64) document.getElementById("f-photo-status").textContent = "";
+}
+
+async function submitCase() {
+  const type     = document.getElementById("f-type").value;
+  const location = document.getElementById("f-location").value.trim();
+  const errEl    = document.getElementById("f-error");
+
+  if (!type)     { errEl.textContent = "⚠️ กรุณาเลือกประเภทเหตุการณ์"; errEl.style.display = "block"; return; }
+  if (!location) { errEl.textContent = "⚠️ กรุณาระบุสถานที่เกิดเหตุ"; errEl.style.display = "block"; return; }
+  errEl.style.display = "none";
+
+  const btn = document.getElementById("f-submit-btn");
+  btn.disabled = true;
+  btn.textContent = "⏳ กำลังบันทึก...";
+
+  const lat = parseFloat(document.getElementById("f-lat").value) || null;
+  const lng = parseFloat(document.getElementById("f-lng").value) || null;
+
+  const payload = {
+    type, location,
+    priority:        document.getElementById("f-priority").value,
+    reporterName:    document.getElementById("f-reporter").value.trim(),
+    reporterPhone:   document.getElementById("f-phone").value.trim(),
+    injuredCount:    parseInt(document.getElementById("f-injured").value) || 0,
+    assignedOfficer: document.getElementById("f-officer").value || null,
+    note:            document.getElementById("f-note").value.trim(),
+    incidentGps:     lat && lng ? { lat, lng } : null,
+    photoBase64:     newCasePhotoBase64 || null,
+  };
+
+  try {
+    const r = await fetch(`${API}/api/cases`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (d.success) {
+      closeModal();
+      showToast(`✅ รับเคส ${d.caseId} เรียบร้อยแล้ว!`, "success");
+      logActivity(d.caseId, `รับเคสใหม่ ${type} · ${location}`, "var(--red)");
+      addCaseRow(d.caseId, type, location, payload.priority, d.data);
+    } else {
+      errEl.textContent = "❌ " + d.message;
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "✓ บันทึกเคส";
+    }
+  } catch {
+    const mockId = "PTT-" + Date.now().toString().slice(-5);
+    closeModal();
+    showToast(`✅ รับเคส ${mockId} เรียบร้อย (mock)`, "success");
+    logActivity(mockId, `รับเคสใหม่ ${type} · ${location}`, "var(--red)");
+    addCaseRow(mockId, type, location, payload.priority, { ...payload, id:mockId, status:"waiting", createdAt:new Date().toISOString() });
+  }
+}
+
+function addCaseRow(caseId, type, location, priority, caseData) {
+  // บันทึกลง casesData
+  if (caseData) casesData[caseId] = caseData;
+  else casesData[caseId] = { id:caseId, type, location, priority, status:"waiting", reporterName:null, reporterPhone:null, injuredCount:0, note:"", incidentGps:null, incidentPhoto:null };
+
+  // อัปเดต dropdown selector
+  const sel = document.getElementById("caseSelector");
+  const pTh = priority==="critical"?"วิกฤต":priority==="high"?"สูง":"ปกติ";
+  const opt = document.createElement("option");
+  opt.value = caseId;
+  opt.dataset.priority = priority;
+  opt.textContent = `${caseId} · ${type} · ${location} (${pTh})`;
+  sel.appendChild(opt);
+
+  // เพิ่มแถวในตาราง
+  const tbody  = document.getElementById("caseTable");
+  const pClass = priority==="critical"?"p-critical":priority==="high"?"p-high":"p-normal";
+  const pText  = priority==="critical"?"วิกฤต":priority==="high"?"สูง":"ปกติ";
+  const now    = new Date().toLocaleTimeString("th-TH",{hour12:false,hour:"2-digit",minute:"2-digit"});
+  const tr     = document.createElement("tr");
+  tr.style.cssText = "animation:su .3s ease;background:#fff8f0";
+  tr.innerHTML = `
+    <td><span class="case-id">${caseId}</span></td>
+    <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>${type}</span></td>
+    <td>${location}</td><td>${now}</td>
+    <td><span class="priority-badge ${pClass}">${pText}</span></td>
+    <td id="st-${caseId}"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
+    <td><div class="officer-pill" style="color:var(--muted)">– ยังไม่มี –</div></td>
+    <td style="display:flex;gap:5px;flex-wrap:wrap">
+      <button class="btn-action outline" onclick="openCaseDetail('${caseId}')">🔍</button>
+      <button class="btn-action outline" onclick="openEditCase('${caseId}')" style="border-color:var(--orange);color:var(--orange)">✏️</button>
+      <button class="btn-action" onclick="quickSel('${caseId}')">รับเคส</button>
+    </td>
+  `;
+  tbody.prepend(tr);
+  setTimeout(()=>tr.style.background="",2000);
+}
+
+/* ─── PHOTO FULLSCREEN ─── */
+function openPhotoFullscreen(src) {
+  const s = src || document.getElementById("incidentPhoto").src;
+  if (!s) return;
+  document.getElementById("photoFsImg").src = s;
+  document.getElementById("photoFsOverlay").classList.add("open");
+}
+function closePhotoFs() { document.getElementById("photoFsOverlay").classList.remove("open"); }
+
+// โหลด case selector ตอน page load
+window.addEventListener("load", () => {
+  populateCaseSelector(Object.values(casesData));
+  refreshCaseSelector(); // ลองดึงจาก API
+});
+
+/* ─── TOAST ─── */
+let _toastTimer;
+function showToast(msg, type="") {
+  clearTimeout(_toastTimer);
+  const t = document.getElementById("toast");
+  t.className = "toast "+type;
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  _toastTimer = setTimeout(()=>t.classList.remove("show"), 3500);
+}
+
+// --- Demo controls injection (non-destructive) ---
+(function insertDemoControls(){
+  const container = document.createElement('div');
+  container.style.padding = '18px 32px';
+  container.innerHTML = `
+    <h2>Demo Controls (Use Cases)</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button id="btn-available" class="btn-action">Toggle Available/Busy (US-01)</button>
+      <button id="btn-enroute" class="btn-action">กำลังไป (US-08)</button>
+      <button id="btn-arrived" class="btn-action">ถึงที่เกิดเหตุ (US-09)</button>
+      <button id="btn-close" class="btn-action">จบเคส (US-16)</button>
+      <button id="btn-load-incident" class="btn-action">โหลดภาพ/พิกัด (US-11)</button>
+      <input id="photo-input" type="file" accept="image/*" style="display:inline-block" />
+      <button id="btn-autolog" class="btn-action">บันทึกอัตโนมัติ (US-17)</button>
+      <button id="btn-pdf" class="btn-action">ดาวน์โหลด PDF (US-07)</button>
+    </div>
+    <div id="demo-status" style="margin-top:12px;font-size:13px;color:var(--muted)"></div>
+  `;
+  const main = document.querySelector('main');
+  if(main) main.parentNode.insertBefore(container, main);
+
+  const API_ROOT = 'http://localhost:3001';
+  const LOG_SERVICE = 'http://localhost:4001';
+  let currentOfficer = 'officer-001';
+  let currentCase = 'PTT-24001';
+
+  function setStatus(msg){ document.getElementById('demo-status').textContent = msg; }
+
+  document.getElementById('btn-available').addEventListener('click', async ()=>{
+    try{ const res = await fetch(`${API_ROOT}/api/officers/${currentOfficer}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: 'available' }) }); const j=await res.json(); setStatus('Updated: '+(j.officer?.status||JSON.stringify(j))); }catch(e){ setStatus('Error'); }
+  });
+
+  document.getElementById('btn-enroute').addEventListener('click', async ()=>{
+    try{ const gps = await new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude,lng:p.coords.longitude}),()=>r({lat:13.7367,lng:100.5232}),{timeout:4000}):r({lat:13.7367,lng:100.5232})); const res = await fetch(`${API_ROOT}/api/cases/${currentCase}/enroute`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ officerId: currentOfficer, lat:gps.lat, lng:gps.lng }) }); const j=await res.json(); setStatus('Enroute: '+JSON.stringify(j)); }catch(e){ setStatus('Error enroute'); }
+  });
+
+  document.getElementById('btn-arrived').addEventListener('click', async ()=>{
+    try{ const gps = { lat:13.7367, lng:100.5232 }; const res = await fetch(`${API_ROOT}/api/cases/${currentCase}/arrived`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ officerId: currentOfficer, lat:gps.lat, lng:gps.lng }) }); const j=await res.json(); setStatus('Arrived: '+JSON.stringify(j)); }catch(e){ setStatus('Error arrived'); }
+  });
+
+  document.getElementById('btn-close').addEventListener('click', async ()=>{
+    try{ const res = await fetch(`${API_ROOT}/api/cases/${currentCase}/close`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ officerId: currentOfficer, note:'Demo close' }) }); const j=await res.json(); setStatus('Closed: '+JSON.stringify(j)); }catch(e){ setStatus('Error close'); }
+  });
+
+  document.getElementById('btn-load-incident').addEventListener('click', async ()=>{
+    try{ const res = await fetch(`${API_ROOT}/api/cases/${currentCase}/incident`); const j=await res.json(); setStatus('Incident: '+JSON.stringify(j)); }catch(e){ setStatus('Error load'); }
+  });
+
+  document.getElementById('photo-input').addEventListener('change', (ev)=>{ const f=ev.target.files[0]; if(!f) return setStatus('No file'); const r=new FileReader(); r.onload=()=> setStatus('Image ready length '+r.result.length); r.readAsDataURL(f); });
+
+  document.getElementById('btn-autolog').addEventListener('click', async ()=>{
+    try{ const res=await fetch(LOG_SERVICE + '/start-case', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ caseId: currentCase }) }); const j=await res.json(); setStatus('Auto log: '+JSON.stringify(j.entry)); }catch(e){ setStatus('Error autolog'); }
+  });
+
+  document.getElementById('btn-pdf').addEventListener('click', async ()=>{
+    try{ const payload={ caseId: currentCase, location:'Demo', detail:'Demo' }; const res=await fetch(API_ROOT + '/api/report/pdf', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); if(!res.ok) return setStatus('PDF failed'); const blob=await res.blob(); const url=URL.createObjectURL(blob); window.open(url); setStatus('PDF opened'); }catch(e){ setStatus('Error pdf'); }
+  });
+
+  setStatus('Demo controls injected');
+})();
+</script>
+</body>
+</html>
