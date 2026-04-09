@@ -1,15 +1,18 @@
 /**
- * Merged backend (includes PDF/report APIs)
+ * ป่อเต็กตึ๊ง – Case Management Backend
+ * Node.js + Express
+ *
+ * Install:  npm install express cors multer
+ * Run:      node server.js
+ * Port:     3001
  */
 
 const express = require("express");
 const cors    = require("cors");
 const fs      = require("fs");
 const path    = require("path");
-const puppeteer = require('puppeteer');
 
 const app = express();
-app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.json({ limit: "20mb" }));  // รองรับ base64 รูปภาพ
 
@@ -319,6 +322,48 @@ app.post("/api/cases/:caseId/close", (req, res) => {
       totalMin,        // เวลารวม (enroute → closed)
       note,
     },
+  });
+});
+
+/* ═══════════════════════════════════════════
+   TRANSPORT · กำลังเคลื่อนย้าย + GPS Real Time
+   POST /api/cases/:id/transport
+   Body: { officerId, lat, lng, hospitalName, hospitalLat, hospitalLng }
+═══════════════════════════════════════════ */
+app.post("/api/cases/:caseId/transport", (req, res) => {
+  const { caseId } = req.params;
+  const { officerId, lat, lng, hospitalName, hospitalLat, hospitalLng } = req.body;
+  if (!cases[caseId]) return res.status(404).json({ success:false, message:"ไม่พบเคส" });
+
+  const c   = cases[caseId];
+  const now = new Date().toISOString();
+
+  // ครั้งแรก: ตั้งสถานะ + รพ.ปลายทาง
+  if (c.status !== "transport") {
+    c.status           = "transport";
+    c.transportAt      = now;
+    c.destinationHosp  = { name: hospitalName, lat: hospitalLat, lng: hospitalLng };
+  }
+
+  // อัปเดตพิกัดรถ (real-time)
+  c.vehicleGps     = { lat, lng, updatedAt: now };
+  c.vehicleUpdates = (c.vehicleUpdates || 0) + 1;
+
+  saveJSON(CASES_FILE, cases);
+
+  // log เฉพาะครั้งแรก หรือทุก 10 ครั้ง
+  if (c.vehicleUpdates === 1 || c.vehicleUpdates % 10 === 0) {
+    addLog(caseId, officerId, "TRANSPORT_GPS", {
+      lat, lng, hospitalName,
+      update: c.vehicleUpdates
+    });
+  }
+
+  return res.json({
+    success:    true,
+    message:    `อัปเดตพิกัดรถ #${c.vehicleUpdates}`,
+    vehicleGps: c.vehicleGps,
+    destination: c.destinationHosp,
   });
 });
 

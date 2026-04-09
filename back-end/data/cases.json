@@ -40,7 +40,7 @@
     "type": "ช่วยเหลือทั่วไป",
     "location": "บ้านพัก ถ.เพชรบุรี",
     "priority": "normal",
-    "status": "on_scene",
+    "status": "enroute",
     "assignedOfficer": "officer-001",
     "reporterName": "สมศักดิ์ พ.",
     "reporterPhone": "082-345-6789",
@@ -51,11 +51,11 @@
     },
     "incidentAddress": "ถนนเพชรบุรี ราชเทวี กรุงเทพมหานคร",
     "incidentPhoto": null,
-    "enrouteAt": "2026-03-26T02:01:30.943Z",
+    "enrouteAt": "2026-04-09T21:34:59.926Z",
     "enrouteGps": {
-      "lat": 13.764953741027991,
-      "lng": 100.50769246161099,
-      "accuracy": null
+      "lat": 13.801438089156445,
+      "lng": 100.3100576633971,
+      "accuracy": 120
     },
     "enrouteAddress": null,
     "arrivedAt": "2026-03-26T02:01:33.076Z",
@@ -75,7 +75,7 @@
     "type": "อุบัติเหตุ",
     "location": "แยกลาดกระบัง",
     "priority": "high",
-    "status": "on_scene",
+    "status": "enroute",
     "assignedOfficer": "officer-001",
     "reporterName": "มูลนิธิรวมใจ",
     "reporterPhone": "083-456-7890",
@@ -86,11 +86,11 @@
     },
     "incidentAddress": "แยกลาดกระบัง ลาดกระบัง กรุงเทพมหานคร",
     "incidentPhoto": null,
-    "enrouteAt": "2026-03-26T02:16:35.641Z",
+    "enrouteAt": "2026-04-09T21:40:43.884Z",
     "enrouteGps": {
-      "lat": 13.75720060190253,
-      "lng": 100.48985041637758,
-      "accuracy": null
+      "lat": 13.801408213345558,
+      "lng": 100.30994309367141,
+      "accuracy": 149
     },
     "enrouteAddress": null,
     "arrivedAt": "2026-03-26T02:16:41.337Z",
@@ -120,11 +120,11 @@
     "incidentAddress": null,
     "incidentPhoto": "http://localhost:3001/photos/PTT-24006_incident.jpg",
     "createdAt": "2026-03-22T21:11:48.310Z",
-    "enrouteAt": "2026-03-26T01:27:14.187Z",
+    "enrouteAt": "2026-04-09T21:44:11.739Z",
     "enrouteGps": {
-      "lat": 13.755990695920985,
-      "lng": 100.48515261487846,
-      "accuracy": null
+      "lat": 13.801438089156445,
+      "lng": 100.3100576633971,
+      "accuracy": 120
     },
     "enrouteAddress": null,
     "arrivedAt": null,
@@ -150,10 +150,10 @@
     "incidentAddress": null,
     "incidentPhoto": "http://localhost:3001/photos/PTT-24007_incident.jpg",
     "createdAt": "2026-03-24T10:19:29.383Z",
-    "enrouteAt": "2026-03-24T10:20:14.869Z",
+    "enrouteAt": "2026-04-09T21:34:04.317Z",
     "enrouteGps": {
-      "lat": 13.801475226046486,
-      "lng": 100.31008043346105,
+      "lat": 13.801438089156445,
+      "lng": 100.3100576633971,
       "accuracy": 120
     },
     "enrouteAddress": null,
@@ -187,11 +187,11 @@
     "incidentAddress": null,
     "incidentPhoto": "http://localhost:3001/photos/PTT-24008_incident.jpg",
     "createdAt": "2026-03-24T10:31:44.472Z",
-    "enrouteAt": "2026-03-26T01:27:34.120Z",
+    "enrouteAt": "2026-04-09T21:22:42.536Z",
     "enrouteGps": {
-      "lat": 13.73723584212383,
-      "lng": 100.49286906960674,
-      "accuracy": null
+      "lat": 13.801625543205514,
+      "lng": 100.31005464431853,
+      "accuracy": 111
     },
     "enrouteAddress": null,
     "arrivedAt": null,
@@ -207,11 +207,11 @@
     "type": "เก็บศพ",
     "priority": "high",
     "location": "นครปฐม",
-    "status": "waiting",
+    "status": "on_scene",
     "reporterName": null,
     "reporterPhone": "0900000000",
     "injuredCount": 0,
-    "assignedOfficer": null,
+    "assignedOfficer": "officer-001",
     "note": "",
     "incidentGps": {
       "lat": 13.8190071,
@@ -220,14 +220,22 @@
     "incidentAddress": null,
     "incidentPhoto": null,
     "createdAt": "2026-03-26T02:17:56.368Z",
-    "enrouteAt": null,
-    "enrouteGps": null,
+    "enrouteAt": "2026-04-09T21:41:58.823Z",
+    "enrouteGps": {
+      "lat": 13.801438089156445,
+      "lng": 100.3100576633971,
+      "accuracy": 120
+    },
     "enrouteAddress": null,
-    "arrivedAt": null,
-    "arrivedGps": null,
+    "arrivedAt": "2026-04-09T21:42:07.204Z",
+    "arrivedGps": {
+      "lat": 13.754318879771501,
+      "lng": 100.48389797518757,
+      "accuracy": null
+    },
     "arrivedAddress": null,
     "closedAt": null,
-    "travelMin": null,
+    "travelMin": 0,
     "onSceneMin": null,
     "totalMin": null
   }
