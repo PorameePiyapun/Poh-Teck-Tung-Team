@@ -12,6 +12,9 @@ const cors    = require("cors");
 const fs      = require("fs");
 const path    = require("path");
 const puppeteer = require('puppeteer');
+const axios = require("axios");
+const multer = require('multer');
+const upload = multer();
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -515,7 +518,7 @@ app.listen(PORT, () => {
 /* ═══════════════════════════════════════
    US-07: CREATE + DOWNLOAD PDF (Puppeteer)
 ═══════════════════════════════════════ */
-app.post("/api/report/pdf", async (req, res) => {
+app.post("/api/report/pdf", upload.none(), async (req, res) => {
 
   let browser;
 
@@ -549,9 +552,44 @@ app.post("/api/report/pdf", async (req, res) => {
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
+    // 🔥 👉 วางตรงนี้เลย (แปลงรูป)
+    let imageBase64 = null;
+
+    // 🔥 FIX: รองรับทั้ง string และ array
+    let imageUrl = null;
+
+    if (Array.isArray(data.images)) {
+      imageUrl = data.images[0];
+    } else if (typeof data.images === "string") {
+      imageUrl = data.images;
+    } else {
+      imageUrl = data.imageUrl || data.incidentPhoto;
+    }
+
+    console.log("👉 imageUrl:", imageUrl);
+
+    if (imageUrl) {
+      try {
+        console.log("👉 โหลดรูป:", imageUrl);
+
+        const res = await axios.get(imageUrl, {
+          responseType: "arraybuffer"
+        });
+
+        const base64 = Buffer.from(res.data).toString("base64");
+        imageBase64 = `data:image/jpeg;base64,${base64}`;
+
+        console.log("✅ โหลดรูปสำเร็จ");
+
+      } catch (err) {
+        console.error("❌ โหลดรูปไม่ได้:", err.message);
+      }
+    }
+
+    // 🔥 แล้วค่อย newPage
     const page = await browser.newPage();
 
-    // 🔥 HTML
+    // 🔥 HTML (UPDATED)
     const html = `
     <html>
     <head>
@@ -562,6 +600,11 @@ app.post("/api/report/pdf", async (req, res) => {
         table { width:100%; border-collapse:collapse; margin-top:10px; }
         td { border:1px solid #000; padding:8px; }
         .label { background:#eee; font-weight:bold; width:25%; }
+        .images img {
+          width: 250px;
+          margin-top: 10px;
+          border: 1px solid #ccc;
+        }
       </style>
     </head>
 
@@ -572,15 +615,21 @@ app.post("/api/report/pdf", async (req, res) => {
         <h3>รายงานการปฏิบัติงานกู้ภัย</h3>
       </div>
 
+      <!-- ข้อมูลหลัก -->
       <table>
         <tr>
           <td class="label">เลขที่เคส</td>
-          <td>${data.caseId}</td>
+          <td>${data.caseId || "-"}</td>
           <td class="label">วันที่</td>
           <td>${new Date().toLocaleDateString("th-TH")}</td>
         </tr>
+        <tr>
+          <td class="label">เวลา</td>
+          <td colspan="3">${data.timestamp || "-"}</td>
+        </tr>
       </table>
 
+      <!-- สถานที่ + เจ้าหน้าที่ -->
       <table>
         <tr>
           <td class="label">สถานที่</td>
@@ -594,24 +643,59 @@ app.post("/api/report/pdf", async (req, res) => {
         </tr>
       </table>
 
+      <!-- พิกัด -->
+      <table>
+        <tr>
+          <td class="label">พิกัด (GPS)</td>
+          <td colspan="3">
+            ${
+              data.lat && data.lng
+                ? `${data.lat}, ${data.lng}`
+                : "-"
+            }
+          </td>
+        </tr>
+      </table>
+
+      <!-- รายละเอียด -->
       <table>
         <tr>
           <td class="label">รายละเอียด</td>
         </tr>
         <tr>
-          <td style="height:120px;">${data.detail || "-"}</td>
+          <td style="height:120px;">
+            ${
+              data.detail && data.detail.trim() !== ""
+                ? data.detail
+                : "-"
+            }
+          </td>
         </tr>
       </table>
 
       <br><br>
+
+      <!-- รูป -->
+      <b>ภาพประกอบ:</b><br/>
+      <div class="images">
+        ${
+          imageBase64
+            ? `<img src="${imageBase64}" />`
+            : "ไม่มีรูปภาพ"
+        }
+      </div>
+
+      <br><br>
+
+      <!-- ลายเซ็น -->
       ลงชื่อ ___________________________<br/>
       (${data.officer || "-"})
 
     </body>
     </html>
-    `;
+`;
 
-    await page.setContent(html, { waitUntil: "networkidle0" });
+await page.setContent(html, { waitUntil: "networkidle0" });
 
     // 🔥 สร้าง PDF เป็น buffer (สำคัญมาก)
     const pdfBuffer = await page.pdf({
