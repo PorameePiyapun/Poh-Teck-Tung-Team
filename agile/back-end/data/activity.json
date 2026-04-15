@@ -1,5 +1,54 @@
 [
   {
+    "id": 59,
+    "timestamp": "2026-04-15T13:02:02.798Z",
+    "date": "15/4/2569",
+    "time": "20:02:02",
+    "caseId": null,
+    "officerId": "officer-001",
+    "officerName": "สกล รักษ์ชาติ",
+    "action": "STATUS_CHANGED",
+    "detail": {
+      "status": "busy"
+    }
+  },
+  {
+    "id": 58,
+    "timestamp": "2026-04-08T12:21:35.940Z",
+    "date": "8/4/2569",
+    "time": "19:21:35",
+    "caseId": "PTT-24034",
+    "officerId": "officer-002",
+    "officerName": "วนัส ตั้งมั่น",
+    "action": "CASE_CREATED",
+    "detail": {
+      "type": "ไฟไหม้",
+      "priority": "critical",
+      "location": "ซอยตั้งสิน",
+      "reporterName": "อับดุลด",
+      "injuredCount": 3,
+      "hasPhoto": true
+    }
+  },
+  {
+    "id": 57,
+    "timestamp": "2026-04-06T13:56:22.634Z",
+    "date": "6/4/2569",
+    "time": "20:56:22",
+    "caseId": "PTT-24033",
+    "officerId": "officer-005",
+    "officerName": "อนุชา ขวัญใจ",
+    "action": "CASE_CREATED",
+    "detail": {
+      "type": "ช่วยเหลือทั่วไป",
+      "priority": "critical",
+      "location": "ซอยตั้งสิน",
+      "reporterName": "อับดุลด",
+      "injuredCount": 2,
+      "hasPhoto": true
+    }
+  },
+  {
     "id": 56,
     "timestamp": "2026-03-25T22:25:45.752Z",
     "date": "26/3/2569",

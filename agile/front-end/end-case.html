@@ -10,10 +10,10 @@
 
 <div class="container">
   <div class="card">
-
+ 
     <div class="title">🚑 End Case Report</div>
 
-    <form method="POST" action="http://localhost:3001/api/report/pdf">
+    <form id="reportForm">
 
       <div class="form-group">
         <label>Case ID</label>
@@ -31,11 +31,25 @@
       </div>
 
       <div class="form-group">
+        <label>เวลา</label>
+        <input name="timestamp" id="timestamp" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>Latitude</label>
+        <input name="lat" id="lat" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>Longitude</label>
+        <input name="lng" id="lng" readonly>
+      </div>
+
+      <div class="form-group">
         <label>Detail</label>
         <textarea name="detail" id="detail"></textarea>
       </div>
 
-      <!-- 🔥 ปุ่ม 2 อัน -->
       <div class="btn-group">
         <button type="submit" class="btn primary">
           End Case + Generate PDF
@@ -52,7 +66,7 @@
 </div>
 
 <script>
-// โหลด case
+// โหลด case list
 fetch("http://localhost:3001/api/cases")
   .then(res => res.json())
   .then(data => {
@@ -74,27 +88,78 @@ document.getElementById("caseId").addEventListener("change", async function () {
   const res = await fetch(`http://localhost:3001/api/cases/${id}`);
   const { data } = await res.json();
 
-  document.getElementById("location").value = data.location || "-";
-  document.getElementById("officer").value = "-";
+  console.log("DATA:", data);
 
-  // 🔥 เพิ่มตรงนี้ (timestamp)
-  const ts = document.getElementById("timestamp");
-  if (ts) {
-    ts.value = data.updatedAt
-      ? new Date(data.updatedAt).toLocaleString("th-TH")
+  document.getElementById("location").value = data.location || "-";
+  document.getElementById("officer").value = data.assignedOfficer || "-";
+
+  document.getElementById("lat").value =
+    data.incidentGps?.lat || "-";
+
+  document.getElementById("lng").value =
+    data.incidentGps?.lng || "-";
+
+  document.getElementById("timestamp").value =
+    data.closedAt
+      ? new Date(data.closedAt).toLocaleString("th-TH")
+      : data.createdAt
+      ? new Date(data.createdAt).toLocaleString("th-TH")
       : "-";
+
+  // 🔥 FIX: รองรับรูป
+  if (data.incidentPhoto) {
+    window.currentImages = [data.incidentPhoto];
+    console.log("📸 มีรูป:", data.incidentPhoto);
+  } else {
+    window.currentImages = [];
+    console.log("❌ ไม่มีรูปในเคสนี้");
   }
 });
 
-// 🔥 ปุ่มกลับหน้า
+// submit
+document.getElementById("reportForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const formData = new FormData();
+
+  formData.append("caseId", document.getElementById("caseId").value);
+  formData.append("location", document.getElementById("location").value);
+  formData.append("officer", document.getElementById("officer").value);
+  formData.append("detail", document.getElementById("detail").value);
+  formData.append("timestamp", document.getElementById("timestamp").value);
+  formData.append("lat", document.getElementById("lat").value);
+  formData.append("lng", document.getElementById("lng").value);
+
+  // 🔥 FIX: ส่งเป็น images[]
+  if (window.currentImages && window.currentImages.length > 0) {
+    window.currentImages.forEach(img => {
+      formData.append("images", img);
+    });
+  }
+
+  const res = await fetch("http://localhost:3001/api/report/pdf", {
+    method: "POST",
+    body: formData
+  });
+
+  const blob = await res.blob();
+
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "report.pdf";
+  a.click();
+});
+
+// ปุ่มกลับหน้า
 function goHome() {
   window.location.href = "home.html";
 }
-// 🔥 ดึง caseId จาก URL
+
+// auto select
 const params = new URLSearchParams(window.location.search);
 const selectedId = params.get("id");
 
-// 🔥 โหลด case + auto select
 fetch("http://localhost:3001/api/cases")
   .then(res => res.json())
   .then(data => {
@@ -105,10 +170,9 @@ fetch("http://localhost:3001/api/cases")
       select.innerHTML += `<option value="${c.id}">${c.id}</option>`;
     });
 
-    // 🔥 ถ้ามี id ส่งมา → เลือกอัตโนมัติ
     if (selectedId) {
       select.value = selectedId;
-      select.dispatchEvent(new Event("change")); // trigger โหลดข้อมูล
+      select.dispatchEvent(new Event("change"));
     }
   });
 </script>

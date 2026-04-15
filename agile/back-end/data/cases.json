@@ -864,5 +864,63 @@
     "travelMin": null,
     "onSceneMin": null,
     "totalMin": null
+  },
+  "PTT-24033": {
+    "id": "PTT-24033",
+    "type": "ช่วยเหลือทั่วไป",
+    "priority": "critical",
+    "location": "ซอยตั้งสิน",
+    "status": "waiting",
+    "reporterName": "อับดุลด",
+    "reporterPhone": "0999999887",
+    "injuredCount": 2,
+    "assignedOfficer": "officer-005",
+    "note": "ต้องการข้าวสาร",
+    "incidentGps": {
+      "lat": 1111111.11,
+      "lng": 11111111.11
+    },
+    "incidentAddress": null,
+    "incidentPhoto": "http://localhost:3001/photos/PTT-24033_incident.jpg",
+    "createdAt": "2026-04-06T13:56:22.633Z",
+    "enrouteAt": null,
+    "enrouteGps": null,
+    "enrouteAddress": null,
+    "arrivedAt": null,
+    "arrivedGps": null,
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": null,
+    "onSceneMin": null,
+    "totalMin": null
+  },
+  "PTT-24034": {
+    "id": "PTT-24034",
+    "type": "ไฟไหม้",
+    "priority": "critical",
+    "location": "ซอยตั้งสิน",
+    "status": "waiting",
+    "reporterName": "อับดุลด",
+    "reporterPhone": "0999999887",
+    "injuredCount": 3,
+    "assignedOfficer": "officer-002",
+    "note": "นาฬิกา",
+    "incidentGps": {
+      "lat": 1111111.11,
+      "lng": 11111111.11
+    },
+    "incidentAddress": null,
+    "incidentPhoto": "http://localhost:3001/photos/PTT-24034_incident.jpg",
+    "createdAt": "2026-04-08T12:21:35.939Z",
+    "enrouteAt": null,
+    "enrouteGps": null,
+    "enrouteAddress": null,
+    "arrivedAt": null,
+    "arrivedGps": null,
+    "arrivedAddress": null,
+    "closedAt": null,
+    "travelMin": null,
+    "onSceneMin": null,
+    "totalMin": null
   }
 }

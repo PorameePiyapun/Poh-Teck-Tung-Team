@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios'); // 🔥 เพิ่ม
 
 async function generatePDF(data) {
   let browser;
@@ -8,9 +9,32 @@ async function generatePDF(data) {
   try {
     console.log("📄 START GENERATE:", data.caseId);
 
-    // 🔥 กัน caseId ว่าง / แปลก
     const safeCaseId = String(data.caseId || 'unknown')
       .replace(/[^a-zA-Z0-9-_]/g, '');
+
+    // 🔥 แปลงรูป (URL → base64)
+    let imageBase64List = [];
+
+    // รองรับทั้ง images[] และ imageUrl
+    if (data.images && data.images.length > 0) {
+      for (const url of data.images) {
+        try {
+          const res = await axios.get(url, { responseType: "arraybuffer" });
+          const base64 = Buffer.from(res.data, "binary").toString("base64");
+          imageBase64List.push(`data:image/jpeg;base64,${base64}`);
+        } catch (err) {
+          console.error("❌ โหลดรูปไม่ได้:", url);
+        }
+      }
+    } else if (data.imageUrl) {
+      try {
+        const res = await axios.get(data.imageUrl, { responseType: "arraybuffer" });
+        const base64 = Buffer.from(res.data, "binary").toString("base64");
+        imageBase64List.push(`data:image/jpeg;base64,${base64}`);
+      } catch (err) {
+        console.error("❌ โหลดรูปไม่ได้:", data.imageUrl);
+      }
+    }
 
     browser = await puppeteer.launch({
       headless: "new",
@@ -25,7 +49,7 @@ async function generatePDF(data) {
       <meta charset="UTF-8">
       <style>
         body {
-          font-family: Arial, sans-serif; /* 🔥 แก้ font */
+          font-family: Arial, sans-serif;
           font-size: 16px;
           padding: 30px;
         }
@@ -36,7 +60,12 @@ async function generatePDF(data) {
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         td { border: 1px solid black; padding: 8px; }
         .signature { margin-top: 40px; text-align: right; }
-        img { width: 120px; margin: 5px; }
+        .images { margin-top: 10px; }
+        .images img {
+          width: 150px;
+          margin: 5px;
+          border: 1px solid #ccc;
+        }
       </style>
     </head>
 
@@ -51,14 +80,8 @@ async function generatePDF(data) {
         <tr>
           <td>เลขที่เคส</td>
           <td>${data.caseId || '-'}</td>
-          <td>วันที่</td>
-          <td>${data.date || '-'}</td>
-        </tr>
-        <tr>
-          <td>เวลาเริ่ม</td>
-          <td>${data.startTime || '-'}</td>
-          <td>เวลาสิ้นสุด</td>
-          <td>${data.endTime || '-'}</td>
+          <td>เวลา</td>
+          <td>${data.timestamp || '-'}</td>
         </tr>
       </table>
 
@@ -99,14 +122,16 @@ async function generatePDF(data) {
 
       <div class="section">
         <b>ภาพประกอบ:</b><br/>
-        ${
-          data.images && data.images.length > 0
-            ? data.images
-                .slice(0, 3) // 🔥 จำกัดรูป (กันพัง)
-                .map(img => `<img src="${img}" />`)
-                .join('')
-            : 'ไม่มีรูปภาพ'
-        }
+        <div class="images">
+          ${
+            imageBase64List.length > 0
+              ? imageBase64List
+                  .slice(0, 6)
+                  .map(img => `<img src="${img}" />`)
+                  .join('')
+              : 'ไม่มีรูปภาพ'
+          }
+        </div>
       </div>
 
       <div class="signature">
@@ -121,7 +146,6 @@ async function generatePDF(data) {
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // 🔥 path fix
     const outputDir = path.join(process.cwd(), 'reports');
 
     if (!fs.existsSync(outputDir)) {
