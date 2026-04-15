@@ -1,0 +1,32 @@
+{
+  "officer-001": {
+    "id": "officer-001",
+    "name": "สกล รักษ์ชาติ",
+    "status": "busy",
+    "updatedAt": "2026-04-09T21:44:11.739Z"
+  },
+  "officer-002": {
+    "id": "officer-002",
+    "name": "วนัส ตั้งมั่น",
+    "status": "busy",
+    "updatedAt": null
+  },
+  "officer-003": {
+    "id": "officer-003",
+    "name": "ธนา ปราการ",
+    "status": "available",
+    "updatedAt": null
+  },
+  "officer-004": {
+    "id": "officer-004",
+    "name": "คมกฤช ล้ำเลิศ",
+    "status": "busy",
+    "updatedAt": null
+  },
+  "officer-005": {
+    "id": "officer-005",
+    "name": "อนุชา ขวัญใจ",
+    "status": "available",
+    "updatedAt": null
+  }
+}
