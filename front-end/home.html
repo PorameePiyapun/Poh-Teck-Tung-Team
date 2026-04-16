@@ -535,7 +535,7 @@
       <option value="">-- เลือกเคส --</option>
     </select>
     <span id="caseBadge" class="cbadge" style="display:none"></span>
-    <button onclick="refreshCaseSelector()" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:4px" title="โหลดเคสใหม่">🔄</button>
+    <button onclick="refreshCaseSelector(true)" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:4px" title="โหลดเคสใหม่">🔄</button>
   </div>
 
   <!-- FLOW GUIDE -->
@@ -581,6 +581,11 @@
       <div id="c09sub" class="ac-sub">ต้องกด "กำลังไป" ก่อน<br>บันทึกเวลา/GPS เปลี่ยนเป็น 🔴<code>POST /api/cases/:id/arrived</code></div>
       <div id="gps09" class="ac-gps"></div>
       <span id="time09" class="ac-time"></span>
+      <!-- CLEAR button: แสดงเมื่อถึงที่เกิดเหตุและไม่มีผู้บาดเจ็บ -->
+      <button id="btnClear" onclick="event.stopPropagation();handleClearCase()"
+        style="display:none;margin-top:8px;width:100%;background:linear-gradient(135deg,var(--green),#15803D);color:#fff;border:none;border-radius:8px;padding:8px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;gap:5px">
+        ✅ CLEAR – ไม่มีผู้บาดเจ็บ
+      </button>
     </div>
 
     <!-- TRANSPORT Card (กำลังเคลื่อนย้าย) -->
@@ -1030,7 +1035,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>ประเภทเหตุการณ์ *</label>
-          <select id="f-type">
+          <select id="f-type" onchange="checkVehicleWarning()">
             <option value="">-- เลือกประเภท --</option>
             <option value="อุบัติเหตุ">อุบัติเหตุทางถนน</option>
             <option value="ช่วยชีวิต">ช่วยชีวิต / คนจมน้ำ</option>
@@ -1042,7 +1047,7 @@
         </div>
         <div class="form-group">
           <label>ความเร่งด่วน *</label>
-          <select id="f-priority">
+          <select id="f-priority" onchange="checkVehicleWarning()">
             <option value="normal">ปกติ</option>
             <option value="high">สูง</option>
             <option value="critical">วิกฤต</option>
@@ -1125,7 +1130,7 @@
       <input type="hidden" id="f-lat"/>
       <input type="hidden" id="f-lng"/>
 
-      <!-- แถว 5: มอบหมาย + จำนวนผู้บาดเจ็บ -->
+      <!-- แถว 5: มอบหมาย + จำนวนผู้บาดเจ็บ + จำนวนรถ -->
       <div class="form-row">
         <div class="form-group">
           <label>มอบหมายทีม</label>
@@ -1140,9 +1145,25 @@
         </div>
         <div class="form-group">
           <label>จำนวนผู้บาดเจ็บ</label>
-          <input id="f-injured" type="number" placeholder="0" min="0" value="0"/>
+          <input id="f-injured" type="number" placeholder="0" min="0" value="0" oninput="checkVehicleWarning()"/>
         </div>
       </div>
+
+      <!-- แถว 5b: จำนวนรถที่รับงาน + แจ้งเตือน -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>🚑 จำนวนรถที่ส่ง</label>
+          <input id="f-vehicles" type="number" placeholder="1" min="1" value="1" oninput="checkVehicleWarning()"/>
+        </div>
+        <div class="form-group">
+          <label>รถที่แนะนำตามความรุนแรง</label>
+          <div id="vehicle-recommend" style="border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--muted);background:#fafafa">
+            เลือกประเภท/ความเร่งด่วนก่อน
+          </div>
+        </div>
+      </div>
+      <!-- คำเตือนถ้าส่งรถเกิน/น้อยเกิน -->
+      <div id="vehicle-warning" style="display:none;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:8px"></div>
 
       <!-- แถว 6: รูปภาพจากผู้แจ้ง -->
       <div class="form-row">
@@ -1940,6 +1961,18 @@ async function paintArrived(lat,lng,acc,time,min) {
   document.getElementById("cardTransport").classList.remove("disabled");
   // US-16 · ปลดล็อคปุ่มจบเคส
   document.getElementById("card16").classList.remove("disabled");
+
+  // ฟีเจอร์ 3: ถ้าผู้บาดเจ็บ = 0 → แสดงปุ่ม CLEAR
+  const caseInfo = casesData[selCase];
+  const injured  = caseInfo?.injuredCount ?? -1;
+  const btnClear = document.getElementById("btnClear");
+  if (injured === 0) {
+    btnClear.style.display = "flex";
+    document.getElementById("card09").onclick = null; // ปิด toggle
+    showToast("ℹ️ ไม่มีผู้บาดเจ็บ — กด CLEAR เพื่อปิดเคส","info");
+  } else {
+    btnClear.style.display = "none";
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -2232,6 +2265,7 @@ function updateTableStatus(id, s) {
     enroute:   '<span class="status-badge s-enroute">🟡 กำลังไป</span>',
     on_scene:  '<span class="status-badge s-onscene">🔴 ในพื้นที่</span>',
     transport: '<span class="status-badge" style="background:#DCFCE7;color:#15803D">🏥 กำลังเคลื่อนย้าย</span>',
+    clear:     '<span class="status-badge" style="background:#DCFCE7;color:#15803D">✅ CLEAR</span>',
     closed:    '<span class="status-badge s-complete">✅ เสร็จสิ้น</span>',
   };
   if (map[s]) el.innerHTML = map[s];
@@ -2257,7 +2291,109 @@ function logActivity(caseId, text, color) {
   setTimeout(()=>d.style.background="",2000);
 }
 
-/* ─── MAP ─── */
+/* ═══════════════════════════════════════
+   ฟีเจอร์ใหม่ 1: แนะนำจำนวนรถ + แจ้งเตือน
+═══════════════════════════════════════ */
+// ตารางจำนวนรถแนะนำตามประเภท/ความรุนแรง
+const VEHICLE_RULES = {
+  critical: { min:2, max:4, label:"2–4 คัน (วิกฤต)" },
+  high:     { min:1, max:2, label:"1–2 คัน (สูง)" },
+  normal:   { min:1, max:1, label:"1 คัน (ปกติ)" },
+};
+const TYPE_EXTRA = {
+  "ไฟไหม้":    { extra:1, note:"บวก +1 สำหรับไฟไหม้" },
+  "ช่วยชีวิต": { extra:1, note:"บวก +1 สำหรับช่วยชีวิต/จมน้ำ" },
+};
+
+function checkVehicleWarning() {
+  const priority = document.getElementById("f-priority")?.value || "normal";
+  const type     = document.getElementById("f-type")?.value     || "";
+  const injured  = parseInt(document.getElementById("f-injured")?.value) || 0;
+  const vehicles = parseInt(document.getElementById("f-vehicles")?.value) || 1;
+
+  const rule  = VEHICLE_RULES[priority] || VEHICLE_RULES.normal;
+  const extra = TYPE_EXTRA[type]?.extra || 0;
+  const recMin = rule.min + extra + (injured > 3 ? 1 : 0);
+  const recMax = rule.max + extra + (injured > 3 ? 1 : 0);
+
+  const recEl = document.getElementById("vehicle-recommend");
+  const warnEl = document.getElementById("vehicle-warning");
+  if (!recEl || !warnEl) return;
+
+  const note = extra ? ` · ${TYPE_EXTRA[type].note}` : "";
+  const injNote = injured > 3 ? " · ผู้บาดเจ็บมาก +1" : "";
+  recEl.innerHTML = `<span style="font-weight:700;color:var(--ink)">${recMin}${recMin!==recMax?`–${recMax}`:""} คัน</span><small style="color:var(--muted)"> (${rule.label}${note}${injNote})</small>`;
+
+  // แจ้งเตือน
+  if (vehicles < recMin) {
+    warnEl.style.display = "block";
+    warnEl.style.background = "#FEE2E2";
+    warnEl.style.color = "var(--red)";
+    warnEl.style.border = "1px solid #FECACA";
+    warnEl.innerHTML = `⚠️ รถที่ส่ง (${vehicles} คัน) น้อยกว่าที่แนะนำ (${recMin} คัน) — อาจไม่เพียงพอสำหรับความรุนแรงระดับนี้`;
+  } else if (vehicles > recMax + 1) {
+    warnEl.style.display = "block";
+    warnEl.style.background = "#FEF3C7";
+    warnEl.style.color = "#92400E";
+    warnEl.style.border = "1px solid #FDE68A";
+    warnEl.innerHTML = `ℹ️ รถที่ส่ง (${vehicles} คัน) เกินกว่าที่แนะนำ (${recMax} คัน) — โปรดยืนยันว่าจำเป็น`;
+  } else {
+    warnEl.style.display = "none";
+  }
+}
+
+/* ═══════════════════════════════════════
+   ฟีเจอร์ใหม่ 3: CLEAR – ไม่มีผู้บาดเจ็บ
+═══════════════════════════════════════ */
+async function handleClearCase() {
+  if (!selCase) { showToast("⚠️ กรุณาเลือกเคสก่อน","error"); return; }
+  if (!confirm(`ยืนยัน CLEAR เคส ${selCase}?\n\nถึงที่เกิดเหตุแล้ว ไม่มีผู้บาดเจ็บ — ปิดเคสนี้`)) return;
+
+  setApiStrip("POST",`/api/cases/${selCase}/clear`,"loading","บันทึก CLEAR...");
+
+  try {
+    const r = await fetch(`${API}/api/cases/${selCase}/clear`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ officerId:ME, note:"CLEAR – ถึงที่เกิดเหตุแล้วไม่มีผู้บาดเจ็บ" })
+    });
+    const d = await r.json();
+    if (d.success) {
+      setApiStrip("POST",`/api/cases/${selCase}/clear`,"ok",d.message);
+      showToast("✅ "+d.message,"success");
+    } else {
+      setApiStrip("POST",`/api/cases/${selCase}/clear`,"err",d.message);
+      showToast(d.message,"error"); return;
+    }
+  } catch {
+    setApiStrip("POST",`/api/cases/${selCase}/clear`,"ok","(mock) CLEAR เรียบร้อย");
+    showToast(`✅ CLEAR เคส ${selCase} – ไม่มีผู้บาดเจ็บ (mock)`,"success");
+  }
+
+  // อัปเดต UI
+  paintClear();
+  updateTableStatus(selCase,"clear");
+  logActivity(selCase,"✅ CLEAR – ไม่มีผู้บาดเจ็บ","var(--green)");
+  applyStatus("available");
+}
+
+function paintClear() {
+  // card09 เปลี่ยนเป็น CLEAR สีเขียว
+  const c09 = document.getElementById("card09");
+  c09.className = "ac done-state";
+  c09.style.background = "linear-gradient(135deg,#DCFCE7,#BBF7D0)";
+  c09.style.borderColor = "var(--green)";
+  c09.style.cursor = "default";
+  c09.onclick = null;
+  document.getElementById("c09title").textContent = "✅ CLEAR";
+  document.getElementById("c09sub").innerHTML =
+    `<span style="color:var(--green);font-weight:700">ไม่มีผู้บาดเจ็บ</span><br>ปิดเคสสำเร็จ`;
+  document.getElementById("btnClear").style.display = "none";
+  // ล็อค card16 ไม่ต้องกด
+  const c16 = document.getElementById("card16");
+  c16.className = "ac close-state";
+  c16.style.pointerEvents = "none";
+  document.getElementById("c16title").textContent = "✅ CLEAR แล้ว";
+}
 let leafletMap = null;
 let gpsStore   = { enroute: null, arrived: null };
 
@@ -2380,37 +2516,41 @@ const casesData = {
   "PTT-24005": { id:"PTT-24005", type:"อุบัติเหตุ", priority:"high", location:"แยกลาดกระบัง", status:"waiting", reporterName:"มูลนิธิรวมใจ", reporterPhone:"083-456-7890", injuredCount:1, note:"", createdAt:null, enrouteAt:null, enrouteAddress:null, arrivedAt:null, arrivedAddress:null, closedAt:null, travelMin:null, totalMin:null, incidentGps:{lat:13.726,lng:100.751}, incidentAddress:"แยกลาดกระบัง กรุงเทพฯ", incidentPhoto:null },
 };
 
-async function refreshCaseSelector() {
+async function refreshCaseSelector(showNotif = false) {
   try {
     const r = await fetch(`${API}/api/cases`);
     const d = await r.json();
     if (d.success) {
-      // อัปเดต casesData
       d.data.forEach(c => { casesData[c.id] = c; });
       populateCaseSelector(d.data);
-      showToast("🔄 โหลดเคสล่าสุดแล้ว","success");
+      if (showNotif) showToast("🔄 โหลดเคสล่าสุดแล้ว","success");
     }
   } catch {
-    // mock: ใช้ข้อมูลที่มีอยู่
     populateCaseSelector(Object.values(casesData));
-    showToast("🔄 โหลดเคส (mock)","info");
+    if (showNotif) showToast("🔄 โหลดเคส (mock)","info");
   }
 }
 
 function populateCaseSelector(caseList) {
   const sel = document.getElementById("caseSelector");
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">-- เลือกเคส --</option>';
-  // กรองเฉพาะที่ยังไม่ปิด
-  const active = caseList.filter(c => c.status !== "closed");
-  active.forEach(c => {
-    const pTh = c.priority==="critical"?"วิกฤต":c.priority==="high"?"สูง":"ปกติ";
-    const opt = document.createElement("option");
-    opt.value = c.id;
-    opt.dataset.priority = c.priority;
-    opt.textContent = `${c.id} · ${c.type} · ${c.location} (${pTh})`;
-    sel.appendChild(opt);
-  });
+  const cur = sel.value; // จำค่าที่เลือกไว้
+
+  // รวบรวม id ที่มีอยู่แล้วใน dropdown
+  const existingIds = new Set([...sel.options].map(o => o.value).filter(Boolean));
+
+  // เพิ่มเฉพาะ option ที่ยังไม่มี (ไม่ลบ / ไม่ reset ทั้งหมด)
+  caseList
+    .filter(c => c.status !== "closed" && !existingIds.has(c.id))
+    .forEach(c => {
+      const pTh = c.priority==="critical"?"วิกฤต":c.priority==="high"?"สูง":"ปกติ";
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.dataset.priority = c.priority;
+      opt.textContent = `${c.id} · ${c.type} · ${c.location} (${pTh})`;
+      sel.appendChild(opt);
+    });
+
+  // คงค่าที่เลือกไว้ ไม่รีเซ็ต
   if (cur) sel.value = cur;
 }
 
@@ -2660,6 +2800,9 @@ function openModal() {
   document.getElementById("f-priority").selectedIndex = 0;
   document.getElementById("f-officer").selectedIndex = 0;
   document.getElementById("f-injured").value = "0";
+  document.getElementById("f-vehicles").value = "1";
+  document.getElementById("vehicle-warning").style.display = "none";
+  document.getElementById("vehicle-recommend").textContent = "เลือกประเภท/ความเร่งด่วนก่อน";
   document.getElementById("f-error").style.display = "none";
   document.getElementById("f-photo-preview").style.display = "none";
   document.getElementById("f-photo-status").textContent = "";
@@ -2953,6 +3096,7 @@ async function submitCase() {
     reporterName:    document.getElementById("f-reporter").value.trim(),
     reporterPhone:   document.getElementById("f-phone").value.trim(),
     injuredCount:    parseInt(document.getElementById("f-injured").value) || 0,
+    vehicleCount:    parseInt(document.getElementById("f-vehicles").value) || 1,
     assignedOfficer: document.getElementById("f-officer").value || null,
     note:            document.getElementById("f-note").value.trim(),
     incidentGps:     lat && lng ? { lat, lng } : null,
@@ -3032,10 +3176,10 @@ function openPhotoFullscreen(src) {
 }
 function closePhotoFs() { document.getElementById("photoFsOverlay").classList.remove("open"); }
 
-// โหลด case selector ตอน page load
+// โหลด case selector ตอน page load (ไม่แสดง toast, ไม่รีเซ็ต selection)
 window.addEventListener("load", () => {
   populateCaseSelector(Object.values(casesData));
-  refreshCaseSelector(); // ลองดึงจาก API
+  refreshCaseSelector(false); // เงียบๆ ดึงข้อมูลล่าสุดจาก API
 });
 
 /* ─── TOAST ─── */

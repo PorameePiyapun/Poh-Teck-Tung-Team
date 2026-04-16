@@ -326,6 +326,44 @@ app.post("/api/cases/:caseId/close", (req, res) => {
 });
 
 /* ═══════════════════════════════════════════
+   CLEAR · ถึงที่เกิดเหตุแล้วไม่มีผู้บาดเจ็บ
+   POST /api/cases/:id/clear
+   Body: { officerId, note? }
+═══════════════════════════════════════════ */
+app.post("/api/cases/:caseId/clear", (req, res) => {
+  const { caseId } = req.params;
+  const { officerId, note } = req.body;
+  if (!cases[caseId]) return res.status(404).json({ success:false, message:"ไม่พบเคส" });
+
+  const c = cases[caseId];
+  if (c.status === "closed" || c.status === "clear")
+    return res.status(409).json({ success:false, message:"เคสนี้ปิดไปแล้ว" });
+
+  const now = new Date();
+  c.status   = "clear";
+  c.closedAt = now.toISOString();
+  c.note     = note || "CLEAR – ไม่มีผู้บาดเจ็บ";
+  c.travelMin  = calcMin(c.enrouteAt, c.arrivedAt);
+  c.onSceneMin = calcMin(c.arrivedAt, now);
+  c.totalMin   = calcMin(c.enrouteAt, now);
+
+  if (officerId && officers[officerId]) {
+    officers[officerId].status = "available";
+    saveJSON(OFFICERS_FILE, officers);
+  }
+  saveJSON(CASES_FILE, cases);
+  addLog(caseId, officerId, "CLEAR", { note, travelMin: c.travelMin, totalMin: c.totalMin });
+  console.log(`[CLEAR] ${caseId} – ไม่มีผู้บาดเจ็บ`);
+
+  return res.json({
+    success: true,
+    message: `✅ CLEAR เคส ${caseId} – ไม่มีผู้บาดเจ็บ ปิดเคสเรียบร้อย`,
+    caseId,
+    summary: { travelMin: c.travelMin, totalMin: c.totalMin, closedAt: c.closedAt },
+  });
+});
+
+/* ═══════════════════════════════════════════
    TRANSPORT · กำลังเคลื่อนย้าย + GPS Real Time
    POST /api/cases/:id/transport
    Body: { officerId, lat, lng, hospitalName, hospitalLat, hospitalLng }
@@ -443,7 +481,7 @@ app.patch("/api/cases/:caseId", (req, res) => {
 ────────────────────────────────────────── */
 app.post("/api/cases", (req, res) => {
   const { type, priority, location, reporterName, reporterPhone,
-          injuredCount, assignedOfficer, note, incidentGps, photoBase64 } = req.body;
+          injuredCount, vehicleCount, assignedOfficer, note, incidentGps, photoBase64 } = req.body;
 
   if (!type)     return res.status(400).json({ success:false, message:"กรุณาระบุประเภทเหตุการณ์" });
   if (!location) return res.status(400).json({ success:false, message:"กรุณาระบุสถานที่เกิดเหตุ" });
@@ -474,6 +512,7 @@ app.post("/api/cases", (req, res) => {
     reporterName:  reporterName  || null,
     reporterPhone: reporterPhone || null,
     injuredCount:  injuredCount  || 0,
+    vehicleCount:  vehicleCount  || 1,
     assignedOfficer: assignedOfficer || null,
     note: note || "",
     incidentGps:     incidentGps  || null,
