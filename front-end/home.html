@@ -207,6 +207,8 @@
     .s-enroute{background:var(--yellow-lt);color:var(--yellow)}
     .s-onscene{background:#FDE8E8;color:var(--red)}
     .s-complete{background:#ECFDF5;color:#065F46}
+.badge-verified{background:#DCFCE7;color:#15803D;font-size:10px;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px;font-weight:700;}
+.badge-unverified{background:#F3F4F6;color:#6B7280;font-size:10px;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px;font-weight:700;}
     .officer-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px}
     .officer-avatar{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
     .btn-action{background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 13px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s}
@@ -790,7 +792,7 @@
         <tbody id="caseTable">
           <tr>
             <td><span class="case-id">PTT-24001</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span><br><span class="badge-verified">✔ Verified</span></td>
             <td>ถ.พระราม 2 กม.15</td><td>08:12</td>
             <td><span class="priority-badge p-critical">วิกฤต</span></td>
             <td id="st-PTT-24001"><span class="status-badge s-onscene">🔴 ในพื้นที่</span></td>
@@ -803,7 +805,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24002</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#D4660A"></span>ช่วยชีวิต</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#D4660A"></span>ช่วยชีวิต</span><br><span class="badge-verified">✔ Verified</span></td>
             <td>ท่าน้ำนนทบุรี</td><td>08:47</td>
             <td><span class="priority-badge p-critical">วิกฤต</span></td>
             <td><span class="status-badge s-dispatch">🔵 จัดทีมแล้ว</span></td>
@@ -815,7 +817,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24004</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#1A4A8A"></span>ช่วยเหลือ</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#1A4A8A"></span>ช่วยเหลือ</span><br><span class="badge-unverified">? Unverified</span></td>
             <td>บ้านพัก ถ.เพชรบุรี</td><td>09:32</td>
             <td><span class="priority-badge p-normal">ปกติ</span></td>
             <td id="st-PTT-24004"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
@@ -828,7 +830,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24005</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span><br><span class="badge-unverified">? Unverified</span></td>
             <td>แยกลาดกระบัง</td><td>09:58</td>
             <td><span class="priority-badge p-high">สูง</span></td>
             <td id="st-PTT-24005"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
@@ -841,7 +843,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24006</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#1A7A4A"></span>ส่งต่อ รพ.</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#1A7A4A"></span>ส่งต่อ รพ.</span><br><span class="badge-verified">✔ Verified</span></td>
             <td>รพ.รามาธิบดี</td><td>10:15</td>
             <td><span class="priority-badge p-normal">ปกติ</span></td>
             <td><span class="status-badge s-complete">✅ เสร็จสิ้น</span></td>
@@ -1055,8 +1057,18 @@
         </div>
       </div>
 
-      <!-- แถว 2: ชื่อผู้แจ้ง + เบอร์โทร -->
-      <div class="form-row">
+      <!-- แถว 2: แหล่งที่มา + ชื่อผู้แจ้ง + เบอร์โทร -->
+      <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div class="form-group">
+          <label>แหล่งที่มา</label>
+          <select id="f-source">
+            <option value="">-- ไม่ระบุ / อื่นๆ --</option>
+            <option value="สถานีตำรวจ">สถานีตำรวจ</option>
+            <option value="โรงพยาบาล">โรงพยาบาล</option>
+            <option value="call center">Call Center</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
         <div class="form-group">
           <label>ชื่อผู้แจ้ง</label>
           <input id="f-reporter" type="text" placeholder="ชื่อ-นามสกุล"/>
@@ -2797,6 +2809,7 @@ function openModal() {
   document.getElementById("f-lat").value = "";
   document.getElementById("f-lng").value = "";
   document.getElementById("f-type").selectedIndex = 0;
+  document.getElementById("f-source").selectedIndex = 0;
   document.getElementById("f-priority").selectedIndex = 0;
   document.getElementById("f-officer").selectedIndex = 0;
   document.getElementById("f-injured").value = "0";
@@ -3093,6 +3106,7 @@ async function submitCase() {
   const payload = {
     type, location,
     priority:        document.getElementById("f-priority").value,
+    source:          document.getElementById("f-source").value,
     reporterName:    document.getElementById("f-reporter").value.trim(),
     reporterPhone:   document.getElementById("f-phone").value.trim(),
     injuredCount:    parseInt(document.getElementById("f-injured").value) || 0,
@@ -3143,6 +3157,12 @@ function addCaseRow(caseId, type, location, priority, caseData) {
   opt.textContent = `${caseId} · ${type} · ${location} (${pTh})`;
   sel.appendChild(opt);
 
+  const source = caseData ? caseData.source : "";
+  const isVerified = ["สถานีตำรวจ", "โรงพยาบาล", "call center"].includes(source);
+  const badgeHtml = isVerified
+    ? `<br><span class="badge-verified">✔ Verified</span>`
+    : `<br><span class="badge-unverified">? Unverified</span>`;
+
   // เพิ่มแถวในตาราง
   const tbody  = document.getElementById("caseTable");
   const pClass = priority==="critical"?"p-critical":priority==="high"?"p-high":"p-normal";
@@ -3152,7 +3172,7 @@ function addCaseRow(caseId, type, location, priority, caseData) {
   tr.style.cssText = "animation:su .3s ease;background:#fff8f0";
   tr.innerHTML = `
     <td><span class="case-id">${caseId}</span></td>
-    <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>${type}</span></td>
+    <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>${type}</span>${badgeHtml}</td>
     <td>${location}</td><td>${now}</td>
     <td><span class="priority-badge ${pClass}">${pText}</span></td>
     <td id="st-${caseId}"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
