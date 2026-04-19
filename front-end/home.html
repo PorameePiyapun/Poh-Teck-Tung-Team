@@ -207,8 +207,6 @@
     .s-enroute{background:var(--yellow-lt);color:var(--yellow)}
     .s-onscene{background:#FDE8E8;color:var(--red)}
     .s-complete{background:#ECFDF5;color:#065F46}
-.badge-verified{background:#DCFCE7;color:#15803D;font-size:10px;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px;font-weight:700;}
-.badge-unverified{background:#F3F4F6;color:#6B7280;font-size:10px;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px;font-weight:700;}
     .officer-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px}
     .officer-avatar{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
     .btn-action{background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 13px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s}
@@ -590,12 +588,12 @@
       </button>
     </div>
 
-    <!-- TRANSPORT Card (กำลังเคลื่อนย้าย) -->
+    <!-- TRANSPORT Card (US-11 กำลังส่ง รพ.) -->
     <div id="cardTransport" class="ac disabled" onclick="handleTransport()">
-      <div class="step-label">เคลื่อนย้าย · โรงพยาบาล</div>
+      <div class="step-label">US-11 · กำลังส่ง รพ.</div>
       <div class="ac-icon">🏥</div>
-      <div id="cTTitle" class="ac-title">กำลังเคลื่อนย้าย</div>
-      <div id="cTSub" class="ac-sub">เลือก รพ. ปลายทาง<br>แชร์ GPS รถ Real Time<code>POST /api/cases/:id/transport</code></div>
+      <div id="cTTitle" class="ac-title">กำลังส่ง รพ.</div>
+      <div id="cTSub" class="ac-sub">เลือก รพ. ปลายทาง<br>อัปเดตสถานะ "กำลังส่ง รพ."<code>POST /api/cases/:id/transport</code></div>
       <div id="gpsT" class="ac-gps"></div>
       <span id="timeT" class="ac-time"></span>
     </div>
@@ -611,63 +609,114 @@
 
   </div>
 
-  <!-- TRANSPORT PANEL – โรงพยาบาลใกล้เคียง + GPS Real Time -->
-  <div id="transportPanel" style="display:none;border-top:1px solid var(--border);padding:14px 22px;background:linear-gradient(135deg,#F0FDF4,#fff)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div style="font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px">
-        🏥 โรงพยาบาลปลายทาง
-        <span style="background:#DCFCE7;color:var(--green);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700">เคลื่อนย้าย</span>
+  <!-- ═══════════ US-11: HOSPITAL PANEL ═══════════ -->
+  <div id="transportPanel" style="display:none;border-top:2px solid #BBF7D0;padding:16px 22px;background:linear-gradient(135deg,#F0FDF4,#fff)">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🏥</span>
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--ink)">เลือกโรงพยาบาลปลายทาง</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">ดึงจาก API radius-based · เรียงตามระยะทางใกล้สุด</div>
+        </div>
+        <span id="transportStatusBadge" style="display:none;background:#DCFCE7;color:var(--green);font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700">🚑 กำลังส่ง รพ.</span>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <!-- GPS Real Time indicator -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <div id="gpsRtIndicator" style="display:none;align-items:center;gap:6px;background:#DCFCE7;border:1px solid var(--green);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--green)">
           <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pg 1s infinite"></span>
-          📡 ส่ง GPS Real Time
+          📡 GPS Real Time
           <span id="gpsRtCoords" style="font-family:monospace;font-size:10px;font-weight:400;color:#15803d"></span>
         </div>
-        <button id="btnStopTransport" onclick="stopTransport()" style="display:none;background:var(--red);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer">
-          ⏹ หยุดส่ง GPS
-        </button>
+        <button id="btnStopTransport" onclick="stopTransport()" style="display:none;background:var(--red);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer">⏹ หยุดส่ง GPS</button>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <!-- ซ้าย: dropdown + ค้นหา รพ. -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <!-- ซ้าย: Dropdown + รายละเอียด -->
       <div>
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <select id="hospitalSelect" onchange="onHospitalSelect()" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--ink);background:var(--white)">
-            <option value="">⏳ กำลังโหลดโรงพยาบาลใกล้เคียง...</option>
-          </select>
-          <button onclick="loadNearbyHospitals()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;white-space:nowrap">🔄 โหลด</button>
+        <!-- Dropdown รพ. radius-based -->
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <div style="flex:1;position:relative">
+            <select id="hospitalSelect" onchange="onHospitalSelect()"
+              style="width:100%;border:2px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--ink);background:var(--white);cursor:pointer;outline:none;transition:border-color .2s"
+              onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
+              <option value="">⏳ กำลังโหลด...</option>
+            </select>
+            <!-- รัศมีค้นหา -->
+            <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:var(--muted)"></div>
+          </div>
+          <button onclick="loadNearbyHospitals()" title="โหลดใหม่"
+            style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 13px;font-size:14px;cursor:pointer;flex-shrink:0;transition:background .2s"
+            onmouseover="this.style.background='#0f3270'" onmouseout="this.style.background='var(--blue)'">🔄</button>
+        </div>
+
+        <!-- รัศมีค้นหา + จำนวนที่พบ -->
+        <div id="hospitalSearchInfo" style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <span>📍 รัศมี 10 กม. จากจุดเกิดเหตุ</span>
+          <span id="hospitalCount" style="background:#E8EDF8;color:var(--blue);border-radius:20px;padding:1px 7px;font-weight:700"></span>
         </div>
 
         <!-- รายละเอียด รพ. ที่เลือก -->
-        <div id="hospitalDetail" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;font-size:12px">
-          <div style="font-weight:700;color:var(--green);font-size:13px;margin-bottom:4px" id="hName">–</div>
-          <div style="color:var(--muted)" id="hAddr">–</div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px">
-              📏 <span id="hDist" style="font-weight:700">–</span> กม.
+        <div id="hospitalDetail" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px">
+          <div style="font-weight:800;color:var(--green);font-size:14px;margin-bottom:6px" id="hName">–</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="hAddr">–</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div style="background:#fff;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--green)">
+              📏 <span id="hDist">–</span> กม.
             </div>
-            <a id="hNavLink" href="#" target="_blank" style="text-decoration:none">
-              <div style="background:var(--green);color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">🧭 นำทาง</div>
+            <div style="background:#fff;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--blue)" id="hType">–</div>
+            <a id="hNavLink" href="#" target="_blank" style="text-decoration:none;flex:1">
+              <div style="background:var(--green);color:#fff;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;text-align:center">🧭 นำทาง</div>
             </a>
           </div>
         </div>
 
-        <!-- ปุ่มเริ่มส่ง GPS -->
-        <button id="btnStartTransport" onclick="startRealTimeGPS()" style="display:none;margin-top:8px;width:100%;background:linear-gradient(135deg,var(--green),#15803D);color:#fff;border:none;border-radius:8px;padding:10px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-          📡 เริ่มส่งพิกัด GPS Real Time
+        <!-- ปุ่ม "กำลังส่ง รพ." (API call อัปเดตสถานะ) -->
+        <button id="btnConfirmTransport" onclick="confirmTransportToHospital()"
+          style="display:none;margin-top:10px;width:100%;background:linear-gradient(135deg,var(--green),#15803D);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px">
+          🚑 ยืนยัน – กำลังส่ง รพ.
+        </button>
+
+        <!-- ปุ่มเริ่ม GPS หลัง confirm แล้ว -->
+        <button id="btnStartTransport" onclick="startRealTimeGPS()"
+          style="display:none;margin-top:8px;width:100%;background:#1A4A8A;color:#fff;border:none;border-radius:10px;padding:10px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          📡 เริ่มส่ง GPS Real Time
         </button>
       </div>
 
-      <!-- ขวา: mini-map รพ. -->
-      <div style="border-radius:10px;overflow:hidden;height:170px;border:2px solid var(--border);background:#e8f4e8;position:relative">
+      <!-- ขวา: Mini-map -->
+      <div style="border-radius:10px;overflow:hidden;height:190px;border:2px solid var(--border);background:#f0f9f0;position:relative">
         <div id="hospitalMapContainer" style="width:100%;height:100%"></div>
-        <div id="hospitalMapHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;flex-direction:column;gap:6px">
-          <span style="font-size:24px">🏥</span>เลือกโรงพยาบาลเพื่อดูแผนที่
+        <div id="hospitalMapHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;flex-direction:column;gap:6px;pointer-events:none">
+          <span style="font-size:28px">🏥</span>
+          <span>เลือกโรงพยาบาลเพื่อดูแผนที่</span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ US-12: VEHICLE COUNTER BADGE (แสดงใต้ panel) ═══════════ -->
+  <div id="vehicleBadgePanel" style="display:none;border-top:1px solid var(--border);padding:10px 22px;background:#fafafa;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="font-size:13px;font-weight:600;color:var(--muted)">🚑 รถที่ assigned กับเคสนี้:</div>
+    <!-- Counter Badge -->
+    <div id="vehicleCountBadge" style="display:flex;align-items:center;gap:8px">
+      <div style="background:var(--blue);color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800" id="vCountNum">0</div>
+      <div>
+        <div style="font-size:13px;font-weight:700" id="vCountLabel">คัน</div>
+        <div style="font-size:11px;color:var(--muted)" id="vThresholdLabel">–</div>
+      </div>
+    </div>
+    <!-- Threshold bar -->
+    <div style="flex:1;min-width:140px">
+      <div style="height:8px;background:#E5E7EB;border-radius:20px;overflow:hidden">
+        <div id="vProgressBar" style="height:100%;border-radius:20px;background:var(--green);transition:width .4s,background .3s;width:0%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px" id="vProgressLabel">0 / 0 คัน</div>
+    </div>
+    <!-- Push Notification badge -->
+    <div id="vNotifBadge" style="display:none;background:#FEE2E2;color:var(--red);border:1px solid #FECACA;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;animation:pulse 1.5s infinite">
+      🔔 รถเกิน threshold!
     </div>
   </div>
 
@@ -792,7 +841,7 @@
         <tbody id="caseTable">
           <tr>
             <td><span class="case-id">PTT-24001</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span><br><span class="badge-verified">✔ Verified</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span></td>
             <td>ถ.พระราม 2 กม.15</td><td>08:12</td>
             <td><span class="priority-badge p-critical">วิกฤต</span></td>
             <td id="st-PTT-24001"><span class="status-badge s-onscene">🔴 ในพื้นที่</span></td>
@@ -805,7 +854,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24002</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#D4660A"></span>ช่วยชีวิต</span><br><span class="badge-verified">✔ Verified</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#D4660A"></span>ช่วยชีวิต</span></td>
             <td>ท่าน้ำนนทบุรี</td><td>08:47</td>
             <td><span class="priority-badge p-critical">วิกฤต</span></td>
             <td><span class="status-badge s-dispatch">🔵 จัดทีมแล้ว</span></td>
@@ -817,7 +866,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24004</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#1A4A8A"></span>ช่วยเหลือ</span><br><span class="badge-unverified">? Unverified</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#1A4A8A"></span>ช่วยเหลือ</span></td>
             <td>บ้านพัก ถ.เพชรบุรี</td><td>09:32</td>
             <td><span class="priority-badge p-normal">ปกติ</span></td>
             <td id="st-PTT-24004"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
@@ -830,7 +879,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24005</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span><br><span class="badge-unverified">? Unverified</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>อุบัติเหตุ</span></td>
             <td>แยกลาดกระบัง</td><td>09:58</td>
             <td><span class="priority-badge p-high">สูง</span></td>
             <td id="st-PTT-24005"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
@@ -843,7 +892,7 @@
           </tr>
           <tr>
             <td><span class="case-id">PTT-24006</span></td>
-            <td><span class="case-type"><span class="dot" style="background:#1A7A4A"></span>ส่งต่อ รพ.</span><br><span class="badge-verified">✔ Verified</span></td>
+            <td><span class="case-type"><span class="dot" style="background:#1A7A4A"></span>ส่งต่อ รพ.</span></td>
             <td>รพ.รามาธิบดี</td><td>10:15</td>
             <td><span class="priority-badge p-normal">ปกติ</span></td>
             <td><span class="status-badge s-complete">✅ เสร็จสิ้น</span></td>
@@ -1057,18 +1106,8 @@
         </div>
       </div>
 
-      <!-- แถว 2: แหล่งที่มา + ชื่อผู้แจ้ง + เบอร์โทร -->
-      <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
-        <div class="form-group">
-          <label>แหล่งที่มา</label>
-          <select id="f-source">
-            <option value="">-- ไม่ระบุ / อื่นๆ --</option>
-            <option value="สถานีตำรวจ">สถานีตำรวจ</option>
-            <option value="โรงพยาบาล">โรงพยาบาล</option>
-            <option value="call center">Call Center</option>
-            <option value="อื่นๆ">อื่นๆ</option>
-          </select>
-        </div>
+      <!-- แถว 2: ชื่อผู้แจ้ง + เบอร์โทร -->
+      <div class="form-row">
         <div class="form-group">
           <label>ชื่อผู้แจ้ง</label>
           <input id="f-reporter" type="text" placeholder="ชื่อ-นามสกุล"/>
@@ -1988,82 +2027,77 @@ async function paintArrived(lat,lng,acc,time,min) {
 }
 
 /* ═══════════════════════════════════════
-   TRANSPORT · กำลังเคลื่อนย้าย + โรงพยาบาล + GPS Real Time
+   US-11 · กำลังส่ง รพ. – Hospital Dropdown (radius-based)
+   AC1: ดึงจาก API radius-based แสดงใน dropdown + ระยะทาง
+   AC2: API อัปเดตสถานะ case เป็น "กำลังส่ง รพ."
 ═══════════════════════════════════════ */
 let hospitalLeaflet  = null;
 let hospitalMarker   = null;
 let vehicleMarker    = null;
 let rtGpsTimer       = null;
 let selectedHospital = null;
+let transportConfirmed = false;
 
 function handleTransport() {
   if (!selCase)   { showToast("⚠️ กรุณาเลือกเคสก่อน","error"); return; }
   if (!enrouteAt) { showToast("⚠️ ต้องกด 'กำลังไป' ก่อน","error"); return; }
 
-  // แสดง panel
   const panel = document.getElementById("transportPanel");
   panel.style.display = "block";
   panel.scrollIntoView({ behavior:"smooth", block:"center" });
 
-  // เปลี่ยนสี card
   document.getElementById("cardTransport").className = "ac enroute-state";
   document.getElementById("cTTitle").textContent = "🏥 เลือก รพ. ปลายทาง";
-  setApiStrip("POST",`/api/cases/${selCase}/transport`,"loading","เปิดโหมดเคลื่อนย้าย");
 
-  // init map
+  // init mini-map
   setTimeout(() => {
     if (!hospitalLeaflet) {
-      // ใช้พิกัดปัจจุบัน/arrived เป็น center
       const center = gpsStore.arrived
         ? [gpsStore.arrived.lat, gpsStore.arrived.lng]
         : [13.7563, 100.5018];
       hospitalLeaflet = L.map("hospitalMapContainer", { zoomControl:true, attributionControl:false })
         .setView(center, 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(hospitalLeaflet);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ maxZoom:19 })
+        .addTo(hospitalLeaflet);
     }
     hospitalLeaflet.invalidateSize();
-  },200);
+  }, 200);
 
-  // โหลดโรงพยาบาลใกล้เคียง
   loadNearbyHospitals();
-
-  updateTableStatus(selCase, "transport");
-  logActivity(selCase,"สกล เริ่มเคลื่อนย้ายผู้ป่วย "+selCase,"var(--green)");
-  showToast("🏥 เลือกโรงพยาบาลปลายทาง แล้วกดส่ง GPS Real Time","info");
+  showVehicleBadge(); // US-12
 }
 
+/* AC1: ดึงโรงพยาบาลด้วย Overpass API radius-based */
 async function loadNearbyHospitals() {
   const sel = document.getElementById("hospitalSelect");
-  sel.innerHTML = "<option>⏳ กำลังค้นหาโรงพยาบาลใกล้เคียง...</option>";
+  sel.innerHTML = "<option value=''>⏳ กำลังค้นหาโรงพยาบาลในรัศมี 10 กม. ...</option>";
+  document.getElementById("hospitalCount").textContent = "";
 
-  // ใช้พิกัด arrived หรือ enroute เป็น origin
   const origin = gpsStore.arrived || gpsStore.enroute;
   const lat    = origin?.lat || 13.7563;
   const lng    = origin?.lng || 100.5018;
 
   try {
-    // Overpass API – ค้นหา hospital ในรัศมี 10 กม.
-    const query = `[out:json][timeout:15];node["amenity"="hospital"](around:10000,${lat},${lng});out 20;`;
+    const query = `[out:json][timeout:20];
+      (
+        node["amenity"="hospital"](around:10000,${lat},${lng});
+        way["amenity"="hospital"](around:10000,${lat},${lng});
+      );
+      out center 20;`;
     const r = await fetch("https://overpass-api.de/api/interpreter", {
       method:"POST", body:"data="+encodeURIComponent(query)
     });
     const d = await r.json();
-    const nodes = d.elements || [];
-
-    if (!nodes.length) {
-      // fallback: Nominatim
-      await loadHospitalsNominatim(lat, lng);
-      return;
-    }
-
-    // เรียงตามระยะทาง
-    const hosp = nodes.map(n => ({
+    const nodes = (d.elements||[]).map(n => ({
       name: n.tags?.["name:th"] || n.tags?.name || "โรงพยาบาล",
-      lat:  n.lat, lng: n.lon,
-      dist: calcDistKm(lat, lng, n.lat, n.lon),
-    })).sort((a,b) => a.dist - b.dist);
+      lat:  n.lat || n.center?.lat,
+      lng:  n.lon || n.center?.lon,
+      type: n.tags?.["hospital:type"] || n.tags?.operator_type || "ทั่วไป",
+      dist: calcDistKm(lat, lng, n.lat||n.center?.lat, n.lon||n.center?.lon),
+    })).filter(n=>n.lat&&n.lng).sort((a,b)=>a.dist-b.dist);
 
-    renderHospitalDropdown(hosp);
+    if (!nodes.length) throw new Error("ไม่พบ");
+    renderHospitalDropdown(nodes);
   } catch {
     await loadHospitalsNominatim(lat, lng);
   }
@@ -2072,17 +2106,19 @@ async function loadNearbyHospitals() {
 async function loadHospitalsNominatim(lat, lng) {
   const sel = document.getElementById("hospitalSelect");
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=โรงพยาบาล&format=json&limit=15&bounded=1&viewbox=${lng-0.15},${lat+0.15},${lng+0.15},${lat-0.15}&accept-language=th`;
-    const r = await fetch(url, { headers:{ "User-Agent":"PohTeckTung-RescueApp/1.0","Accept-Language":"th" }});
+    const url = `https://nominatim.openstreetmap.org/search?q=โรงพยาบาล&format=json&limit=15&bounded=1&viewbox=${lng-0.12},${lat+0.12},${lng+0.12},${lat-0.12}&accept-language=th`;
+    const r = await fetch(url,{ headers:{ "User-Agent":"PohTeckTung-RescueApp/1.0","Accept-Language":"th" }});
     const d = await r.json();
-    const hosp = d.map(h => ({
+    const hosp = d.map(h=>({
       name: h.display_name.split(",")[0],
       lat:  parseFloat(h.lat), lng: parseFloat(h.lon),
-      dist: calcDistKm(lat, lng, parseFloat(h.lat), parseFloat(h.lon)),
+      type: "ทั่วไป",
+      dist: calcDistKm(lat,lng,parseFloat(h.lat),parseFloat(h.lon)),
     })).sort((a,b)=>a.dist-b.dist);
+    if (!hosp.length) throw new Error("ไม่พบ");
     renderHospitalDropdown(hosp);
   } catch {
-    sel.innerHTML = "<option value=''>❌ ไม่สามารถโหลดได้ กรุณาลองใหม่</option>";
+    sel.innerHTML = "<option value=''>❌ ไม่พบโรงพยาบาล ลองกด 🔄</option>";
   }
 }
 
@@ -2092,45 +2128,49 @@ function renderHospitalDropdown(list) {
   list.forEach((h,i) => {
     const opt = document.createElement("option");
     opt.value = i;
-    opt.textContent = `🏥 ${h.name}  (${h.dist.toFixed(1)} กม.)`;
-    opt.dataset.idx = i;
+    // AC1: แสดงระยะทางใน dropdown
+    opt.textContent = `🏥 ${h.name}   📏 ${h.dist.toFixed(1)} กม.`;
     sel.appendChild(opt);
   });
   sel._hospitals = list;
+  document.getElementById("hospitalCount").textContent = `พบ ${list.length} แห่ง`;
 
-  // วาดหมุดทุก รพ. บนแผนที่
+  // วาดหมุดทั้งหมดบนแผนที่
   if (hospitalLeaflet) {
-    list.forEach(h => {
+    list.forEach((h,i) => {
       const icon = L.divIcon({
-        html:`<div style="background:#16A34A;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)">🏥</div>`,
-        className:"", iconAnchor:[14,12]
+        html:`<div style="background:${i===0?'#16A34A':'#1A4A8A'};color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,.3)">🏥 ${h.dist.toFixed(1)}กม.</div>`,
+        className:"",iconAnchor:[28,12]
       });
       L.marker([h.lat,h.lng],{icon}).addTo(hospitalLeaflet)
-        .bindPopup(`<b>${h.name}</b><br><small>${h.dist.toFixed(1)} กม.</small>`);
+        .bindPopup(`<b>${h.name}</b><br><small>${h.dist.toFixed(2)} กม.</small>`);
     });
   }
-  showToast(`🏥 พบ ${list.length} โรงพยาบาลใกล้เคียง`,"success");
+  showToast(`🏥 พบ ${list.length} โรงพยาบาล (รัศมี 10 กม.)`, "success");
 }
 
 function onHospitalSelect() {
   const sel  = document.getElementById("hospitalSelect");
   const list = sel._hospitals;
   const idx  = parseInt(sel.value);
-  if (isNaN(idx) || !list) {
+  if (isNaN(idx)||!list) {
     document.getElementById("hospitalDetail").style.display = "none";
-    document.getElementById("btnStartTransport").style.display = "none";
+    document.getElementById("btnConfirmTransport").style.display = "none";
     return;
   }
-
   selectedHospital = list[idx];
+
+  // แสดงรายละเอียด
   document.getElementById("hospitalDetail").style.display = "block";
   document.getElementById("hName").textContent = selectedHospital.name;
   document.getElementById("hAddr").textContent = `${selectedHospital.lat.toFixed(5)}, ${selectedHospital.lng.toFixed(5)}`;
-  document.getElementById("hDist").textContent = selectedHospital.dist.toFixed(1);
+  document.getElementById("hDist").textContent = selectedHospital.dist.toFixed(2);
+  document.getElementById("hType").textContent = selectedHospital.type || "ทั่วไป";
   document.getElementById("hNavLink").href = `https://www.google.com/maps/dir/?api=1&destination=${selectedHospital.lat},${selectedHospital.lng}&travelmode=driving`;
-  document.getElementById("btnStartTransport").style.display = "flex";
+  document.getElementById("btnConfirmTransport").style.display = "flex";
+  document.getElementById("btnStartTransport").style.display = "none";
 
-  // ซูมแผนที่ไป รพ.
+  // ซูมแผนที่
   if (hospitalLeaflet) {
     hospitalLeaflet.setView([selectedHospital.lat, selectedHospital.lng], 14);
     if (hospitalMarker) hospitalLeaflet.removeLayer(hospitalMarker);
@@ -2140,85 +2180,165 @@ function onHospitalSelect() {
     });
     hospitalMarker = L.marker([selectedHospital.lat,selectedHospital.lng],{icon})
       .addTo(hospitalLeaflet)
-      .bindPopup(`<b>🏥 ${selectedHospital.name}</b><br>ปลายทาง`).openPopup();
+      .bindPopup(`<b>🏥 ${selectedHospital.name}</b><br>ปลายทาง – ${selectedHospital.dist.toFixed(1)} กม.`).openPopup();
     document.getElementById("hospitalMapHint").style.display = "none";
   }
 }
 
-function startRealTimeGPS() {
+/* AC2: API call อัปเดตสถานะ case เป็น "กำลังส่ง รพ." */
+async function confirmTransportToHospital() {
   if (!selectedHospital) { showToast("⚠️ กรุณาเลือกโรงพยาบาลก่อน","error"); return; }
-  if (rtGpsTimer) return; // กำลังส่งอยู่แล้ว
 
+  const btn = document.getElementById("btnConfirmTransport");
+  btn.disabled = true;
+  btn.textContent = "⏳ กำลังอัปเดตสถานะ...";
+  setApiStrip("POST",`/api/cases/${selCase}/transport`,"loading","อัปเดตสถานะ 'กำลังส่ง รพ.'");
+
+  let lat = 13.756+rnd(), lng = 100.502+rnd();
+  try { const p = await getGPS(); lat=p.lat; lng=p.lng; } catch {}
+
+  try {
+    const r = await fetch(`${API}/api/cases/${selCase}/transport`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        officerId: ME, lat, lng,
+        hospitalName: selectedHospital.name,
+        hospitalLat:  selectedHospital.lat,
+        hospitalLng:  selectedHospital.lng,
+        distKm:       selectedHospital.dist,
+      })
+    });
+    const d = await r.json();
+    if (d.success) {
+      setApiStrip("POST",`/api/cases/${selCase}/transport`,"ok",d.message);
+      showToast(`🚑 ${d.message}`,"success");
+    } else {
+      setApiStrip("POST",`/api/cases/${selCase}/transport`,"err",d.message);
+    }
+  } catch {
+    setApiStrip("POST",`/api/cases/${selCase}/transport`,"ok","(mock) กำลังส่ง รพ.");
+    showToast(`🚑 กำลังส่ง ${selectedHospital.name} (mock)`,"success");
+  }
+
+  // อัปเดต UI
+  transportConfirmed = true;
+  btn.style.display = "none";
+  document.getElementById("btnStartTransport").style.display = "flex";
+  document.getElementById("transportStatusBadge").style.display = "inline-flex";
+  document.getElementById("cardTransport").className = "ac done-state";
+  document.getElementById("cTTitle").textContent = "🚑 กำลังส่ง รพ.";
+  const gt = document.getElementById("gpsT");
+  gt.textContent = `→ ${selectedHospital.name} (${selectedHospital.dist.toFixed(1)} กม.)`;
+  gt.classList.add("show");
+  const tt = document.getElementById("timeT");
+  tt.textContent = new Date().toLocaleTimeString("th-TH",{hour12:false});
+  tt.classList.add("show");
+  updateTableStatus(selCase,"transport");
+  logActivity(selCase,`🚑 กำลังส่ง → ${selectedHospital.name}`,"var(--green)");
+}
+
+function startRealTimeGPS() {
+  if (rtGpsTimer) return;
   document.getElementById("gpsRtIndicator").style.display = "flex";
   document.getElementById("btnStopTransport").style.display = "block";
   document.getElementById("btnStartTransport").style.display = "none";
+  showToast("📡 เริ่มส่ง GPS Real Time","success");
 
-  showToast("📡 เริ่มส่ง GPS Real Time แล้ว","success");
-  setApiStrip("POST",`/api/cases/${selCase}/transport`,"ok","ส่ง GPS Real Time");
-
-  // ส่ง GPS ทุก 5 วินาที
   async function sendGPS() {
-    let lat, lng;
-    try {
-      const pos = await getGPS();
-      lat = pos.lat; lng = pos.lng;
-    } catch {
-      lat = 13.756 + rnd(); lng = 100.502 + rnd(); // mock
-    }
-
-    // อัปเดต indicator
+    let lat=13.756+rnd(), lng=100.502+rnd();
+    try { const p=await getGPS(); lat=p.lat; lng=p.lng; } catch {}
     document.getElementById("gpsRtCoords").textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-
-    // วาดหมุดรถบนแผนที่
     if (hospitalLeaflet) {
-      const vehicleIcon = L.divIcon({
-        html:`<div style="position:relative">
-          <div style="width:20px;height:20px;border-radius:50%;background:#C8161D;border:3px solid #fff;box-shadow:0 0 0 4px rgba(200,22,29,.3);animation:pulse 1.2s infinite"></div>
-          <div style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:#C8161D;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap">🚑 รถกู้ภัย</div>
-        </div>`,
-        iconSize:[20,20],iconAnchor:[10,10],className:""
+      const vi = L.divIcon({
+        html:`<div style="position:relative"><div style="width:18px;height:18px;border-radius:50%;background:#C8161D;border:3px solid #fff;box-shadow:0 0 0 4px rgba(200,22,29,.3);animation:pulse 1.2s infinite"></div><div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:#C8161D;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap">🚑 รถ</div></div>`,
+        iconSize:[18,18],iconAnchor:[9,9],className:""
       });
       if (vehicleMarker) hospitalLeaflet.removeLayer(vehicleMarker);
-      vehicleMarker = L.marker([lat,lng],{icon:vehicleIcon}).addTo(hospitalLeaflet);
+      vehicleMarker = L.marker([lat,lng],{icon:vi,draggable:false}).addTo(hospitalLeaflet);
     }
-
-    // ส่งไป backend
     try {
       await fetch(`${API}/api/cases/${selCase}/transport`,{
-        method:"POST", headers:{"Content-Type":"application/json"},
+        method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ officerId:ME, lat, lng,
-          hospitalName: selectedHospital.name,
-          hospitalLat:  selectedHospital.lat,
-          hospitalLng:  selectedHospital.lng,
+          hospitalName: selectedHospital?.name,
+          hospitalLat:  selectedHospital?.lat,
+          hospitalLng:  selectedHospital?.lng,
         })
       });
     } catch {}
   }
-
   sendGPS();
   rtGpsTimer = setInterval(sendGPS, 5000);
-
-  // อัปเดต card
-  document.getElementById("cardTransport").className = "ac done-state";
-  document.getElementById("cTTitle").textContent = "📡 กำลังส่ง GPS";
-  const gt = document.getElementById("gpsT");
-  gt.textContent = `→ ${selectedHospital.name}`;
-  gt.classList.add("show");
-  const tt = document.getElementById("timeT");
-  tt.textContent = "เริ่ม "+new Date().toLocaleTimeString("th-TH",{hour12:false});
-  tt.classList.add("show");
 }
 
 function stopTransport() {
   if (rtGpsTimer) { clearInterval(rtGpsTimer); rtGpsTimer = null; }
   document.getElementById("gpsRtIndicator").style.display = "none";
-  const stopBtn = document.getElementById("btnStopTransport");
-  if (stopBtn) stopBtn.style.display = "none";
+  const sb = document.getElementById("btnStopTransport");
+  if (sb) sb.style.display = "none";
   if (vehicleMarker && hospitalLeaflet) { hospitalLeaflet.removeLayer(vehicleMarker); vehicleMarker = null; }
 }
 
+/* ═══════════════════════════════════════
+   US-12 · Vehicle Counter Badge
+   AC1: แสดง counter badge จำนวนรถ assigned กับ incident
+   AC2: เปรียบเทียบกับ threshold ตามความรุนแรง แจ้งเตือนเมื่อเกิน
+═══════════════════════════════════════ */
+const VEHICLE_THRESHOLD = { critical:4, high:2, normal:1 };
+
+function showVehicleBadge() {
+  if (!selCase) return;
+  const c = casesData[selCase];
+  if (!c) return;
+
+  const panel = document.getElementById("vehicleBadgePanel");
+  panel.style.display = "flex";
+
+  const count     = c.vehicleCount || 1;
+  const priority  = c.priority || "normal";
+  const threshold = VEHICLE_THRESHOLD[priority] || 1;
+
+  // AC1: แสดง counter
+  document.getElementById("vCountNum").textContent = count;
+  const pTh = priority==="critical"?"วิกฤต":priority==="high"?"สูง":"ปกติ";
+  document.getElementById("vCountLabel").textContent = `คัน (เคสระดับ ${pTh})`;
+  document.getElementById("vThresholdLabel").textContent = `threshold: ${threshold} คัน`;
+
+  // Progress bar
+  const pct  = Math.min((count/threshold)*100, 100);
+  const bar  = document.getElementById("vProgressBar");
+  bar.style.width     = pct+"%";
+  bar.style.background = count > threshold ? "var(--red)" : count === threshold ? "var(--orange)" : "var(--green)";
+  document.getElementById("vProgressLabel").textContent = `${count} / ${threshold} คัน`;
+
+  // AC2: Push notification badge เมื่อเกิน threshold
+  const notif = document.getElementById("vNotifBadge");
+  if (count > threshold) {
+    notif.style.display = "block";
+    notif.textContent = `🔔 รถเกิน threshold! (${count} > ${threshold} คัน) — โปรดยืนยัน`;
+    // Browser notification (ถ้ารองรับ)
+    pushVehicleNotification(count, threshold, pTh);
+  } else {
+    notif.style.display = "none";
+  }
+}
+
+async function pushVehicleNotification(count, threshold, pTh) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    await Notification.requestPermission();
+  }
+  if (Notification.permission === "granted") {
+    new Notification("⚠️ ป่อเต็กตึ๊ง – รถเกิน Threshold", {
+      body: `เคส ${selCase} (ระดับ ${pTh}): รถ ${count} คัน เกินกว่า threshold (${threshold} คัน)`,
+      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚑</text></svg>",
+    });
+  }
+}
+
 function calcDistKm(lat1,lng1,lat2,lng2) {
-  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  if (!lat1||!lng1||!lat2||!lng2) return 999;
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
@@ -2809,7 +2929,6 @@ function openModal() {
   document.getElementById("f-lat").value = "";
   document.getElementById("f-lng").value = "";
   document.getElementById("f-type").selectedIndex = 0;
-  document.getElementById("f-source").selectedIndex = 0;
   document.getElementById("f-priority").selectedIndex = 0;
   document.getElementById("f-officer").selectedIndex = 0;
   document.getElementById("f-injured").value = "0";
@@ -3106,7 +3225,6 @@ async function submitCase() {
   const payload = {
     type, location,
     priority:        document.getElementById("f-priority").value,
-    source:          document.getElementById("f-source").value,
     reporterName:    document.getElementById("f-reporter").value.trim(),
     reporterPhone:   document.getElementById("f-phone").value.trim(),
     injuredCount:    parseInt(document.getElementById("f-injured").value) || 0,
@@ -3157,12 +3275,6 @@ function addCaseRow(caseId, type, location, priority, caseData) {
   opt.textContent = `${caseId} · ${type} · ${location} (${pTh})`;
   sel.appendChild(opt);
 
-  const source = caseData ? caseData.source : "";
-  const isVerified = ["สถานีตำรวจ", "โรงพยาบาล", "call center"].includes(source);
-  const badgeHtml = isVerified
-    ? `<br><span class="badge-verified">✔ Verified</span>`
-    : `<br><span class="badge-unverified">? Unverified</span>`;
-
   // เพิ่มแถวในตาราง
   const tbody  = document.getElementById("caseTable");
   const pClass = priority==="critical"?"p-critical":priority==="high"?"p-high":"p-normal";
@@ -3172,7 +3284,7 @@ function addCaseRow(caseId, type, location, priority, caseData) {
   tr.style.cssText = "animation:su .3s ease;background:#fff8f0";
   tr.innerHTML = `
     <td><span class="case-id">${caseId}</span></td>
-    <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>${type}</span>${badgeHtml}</td>
+    <td><span class="case-type"><span class="dot" style="background:#C8161D"></span>${type}</span></td>
     <td>${location}</td><td>${now}</td>
     <td><span class="priority-badge ${pClass}">${pText}</span></td>
     <td id="st-${caseId}"><span class="status-badge s-waiting">⏳ รอดำเนินการ</span></td>
