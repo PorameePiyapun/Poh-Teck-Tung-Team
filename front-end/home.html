@@ -3324,6 +3324,99 @@ function showToast(msg, type="") {
   t.classList.add("show");
   _toastTimer = setTimeout(()=>t.classList.remove("show"), 3500);
 }
+
+// เริ่มทำงานเมื่อโหลดหน้าเสร็จ
+window.addEventListener('load', initOtherTeamsSocket);
+/* ─────────────────────────────────────────
+   FRONTEND: TRACKING OTHER TEAMS
+────────────────────────────────────────── */
+// ต้องมีตัวแปรนี้ประกาศไว้ด้านบนๆ ของ script
+let otherTeamsMarkers = {}; 
+
+function initTracking() {
+    // แก้พอร์ตให้ตรงกับ server.js (3002)
+    const socket = new WebSocket('ws://localhost:3002');
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'VEHICLE_UPDATE') {
+            data.vehicles.forEach(veh => {
+                const pos = [veh.gps.lat, veh.gps.lng];
+
+                if (otherTeamsMarkers[veh.teamId]) {
+                    // ถ้ามีหมุดแล้ว ให้ขยับตำแหน่ง (Real-time movement)
+                    otherTeamsMarkers[veh.teamId].setLatLng(pos);
+                } else {
+                    // ถ้ายังไม่มี ให้สร้างใหม่
+                    const teamIcon = L.divIcon({
+                        className: 'other-team-icon',
+                        html: `<div style="background:#007BFF; color:white; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:bold; border:2px solid white; white-space:nowrap;">
+                                📍 ${veh.teamName}
+                               </div>`,
+                        iconSize: [120, 30]
+                    });
+                    
+                    // เพิ่มหมุดลงในแผนที่ (sceneMap)
+                    otherTeamsMarkers[veh.teamId] = L.marker(pos, { icon: teamIcon }).addTo(sceneMap);
+                }
+            });
+        }
+    };
+}
+
+// รันฟังก์ชันเมื่อโหลดหน้าเว็บ
+window.addEventListener('load', initTracking);
+let otherTeamsMarkers1 = {}; // เก็บหมุดทีมอื่นไว้ข้างนอก
+
+function initTracking() {
+    const socket = new WebSocket('ws://localhost:3002');
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'VEHICLE_UPDATE') {
+            data.vehicles.forEach(veh => {
+                // 1. ถ้าเป็น ID ตัวเราเอง (officer-001) ไม่ต้องวาดทีมอื่นซ้ำ
+                // if (veh.teamId === 'officer-001') return; 
+
+                const pos = [veh.gps.lat, veh.gps.lng];
+
+                if (otherTeamsMarkers[veh.teamId]) {
+                    // ถ้ามีหมุดแล้ว ให้ขยับตำแหน่ง
+                    otherTeamsMarkers[veh.teamId].setLatLng(pos);
+                } else {
+                    // 2. สร้าง Icon ใหม่ให้ต่างจากเรา (ใช้สีน้ำเงิน และใส่ชื่อทีม)
+                    const teamIcon = L.divIcon({
+                        className: 'other-team-label',
+                        html: `
+                            <div style="
+                                background: #007BFF; 
+                                color: white; 
+                                padding: 4px 10px; 
+                                border-radius: 20px; 
+                                font-size: 12px; 
+                                font-weight: bold; 
+                                border: 2px solid white; 
+                                white-space: nowrap;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                                display: flex;
+                                align-items: center;
+                                gap: 5px;
+                            ">
+                                <span style="font-size: 14px;">🚑</span> ${veh.teamName}
+                            </div>
+                        `,
+                        iconSize: [120, 30],
+                        iconAnchor: [60, 15] // ให้จุดกึ่งกลางป้ายอยู่ตรงพิกัดพอดี
+                    });
+
+                    // เพิ่มหมุดลงแผนที่
+                    otherTeamsMarkers[veh.teamId] = L.marker(pos, { icon: teamIcon }).addTo(sceneMap);
+                }
+            });
+        }
+    };
+}
 </script>
+
 </body>
 </html>
