@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Command Center</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
+
+  <link rel="stylesheet" href="map.css">
+</head>
+
+<body>
+
+<button class="back-btn" onclick="window.location.href='home.html';">← กลับ</button>
+
+<div class="hud">
+  🚑 COMMAND CENTER<br>
+  <span id="status">กำลังโหลด...</span>
+</div>
+
+<div class="filter-box">
+
+  <div class="title">🚨 ประเภทเคส</div>
+  <select id="caseType">
+    <option value="">ทั้งหมด</option>
+    <option value="อุบัติเหตุทางถนน">อุบัติเหตุทางถนน</option>
+    <option value="ช่วยชีวิต">ช่วยชีวิต</option>
+    <option value="ไฟไหม้">ไฟไหม้</option>
+    <option value="ส่งต่อโรงพยาบาล">ส่งต่อโรงพยาบาล</option>
+  </select>
+
+  <div class="title">🧰 อุปกรณ์</div>
+  <label><input type="checkbox" id="oxygen"> Oxygen</label>
+  <label><input type="checkbox" id="water"> Water</label>
+  <label><input type="checkbox" id="rescue"> Rescue Kit</label>
+
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<script src="map.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+body {
+  margin: 0;
+  background: #121212;
+  font-family: sans-serif;
+}
+
+#map {
+  height: 100vh;
+}
+
+/* HUD */
+.hud {
+  position: absolute;
+  top: 90px;
+  left: 15px;
+  background: rgba(0,0,0,0.85);
+  color: #00ffcc;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #00ffcc;
+  box-shadow: 0 0 10px #00ffcc;
+  z-index: 2000;
+}
+
+/* 🎮 FILTER PANEL */
+.filter-box {
+  position: absolute;
+  top: 180px;
+  left: 15px;
+  width: 220px;
+  background: rgba(20,20,20,0.95);
+  color: #00ffcc;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #00ffcc;
+  box-shadow: 0 0 12px rgba(0,255,204,0.5);
+  z-index: 1000;
+  font-size: 14px;
+}
+
+.filter-box .title {
+  font-weight: bold;
+  margin: 10px 0 6px;
+}
+
+.filter-box select {
+  width: 100%;
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  background: #111;
+  color: #00ffcc;
+}
+
+.filter-box label {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.filter-box input[type="checkbox"] {
+  accent-color: #00ffcc;
+}
+
+/* ปุ่ม */
+.back-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  z-index: 2000;
+}
+
+/* marker */
+.marker {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:16px;
+}
+
+.marker.fire {
+  background: red;
+  box-shadow: 0 0 10px red;
+}
+
+.marker.ambulance {
+  background: cyan;
+  box-shadow: 0 0 10px cyan;
+}
+
+.marker.rescue {
+  background: orange;
+  box-shadow: 0 0 10px orange;
+}
